@@ -12,6 +12,8 @@ import 'savings_goal.dart';
 import 'financial_calendar.dart';
 import 'transaction_history.dart';
 import 'statistics.dart';
+import 'notification_settings.dart';
+import '../services/notification_service.dart';
 
 class Dashboard extends StatefulWidget {
   final VoidCallback? onToggleTheme;
@@ -27,10 +29,31 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
   final Color primaryColor = const Color(0xFF172033);
   final Color backgroundColor = const Color(0xFFF4F1EA);
   final Color accentColor = const Color(0xFFE8B85C);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      NotificationService.syncFromNative().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   // ============================================================
   // DATA UTAMA
@@ -730,12 +753,61 @@ class _DashboardState extends State<Dashboard> {
                 color: textColor,
               ),
             ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_none_rounded,
-              color: textColor,
-            ),
+          ValueListenableBuilder<int>(
+            valueListenable: NotificationService.pendingCountNotifier,
+            builder: (context, pendingCount, child) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    tooltip: 'Auto Detect Transaksi',
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const NotificationSettingsScreen(),
+                        ),
+                      );
+                      if (mounted) setState(() {});
+                    },
+                    icon: Icon(
+                      pendingCount > 0
+                          ? Icons.notifications_active_rounded
+                          : Icons.notifications_none_rounded,
+                      color: pendingCount > 0
+                          ? (isDark ? accentColor : primaryColor)
+                          : textColor,
+                    ),
+                  ),
+                  if (pendingCount > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE98585),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          pendingCount > 9 ? '9+' : '$pendingCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],
@@ -866,6 +938,91 @@ class _DashboardState extends State<Dashboard> {
               ),
 
               const SizedBox(height: 24),
+
+              // ==================================================
+              // NOTIFIKASI TRANSAKSI TERDETEKSI BANNER
+              // ==================================================
+              ValueListenableBuilder<int>(
+                valueListenable: NotificationService.pendingCountNotifier,
+                builder: (context, pendingCount, _) {
+                  if (pendingCount == 0) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const NotificationSettingsScreen(),
+                          ),
+                        );
+                        if (mounted) setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: (isDark ? accentColor : primaryColor)
+                              .withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark
+                                ? accentColor.withValues(alpha: 0.4)
+                                : primaryColor.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isDark ? accentColor : primaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.receipt_long_rounded,
+                                size: 18,
+                                color: isDark ? primaryColor : Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$pendingCount Transaksi Terdeteksi',
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Ada transaksi dari notifikasi yang perlu dikonfirmasi',
+                                    style: TextStyle(
+                                      color: mutedTextColor,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: isDark ? accentColor : primaryColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
 
               // ==================================================
               // AKSES CEPAT

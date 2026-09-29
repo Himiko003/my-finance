@@ -5,6 +5,7 @@ import 'screens/dashboard.dart';
 import 'services/transaction_service.dart';
 import 'services/budget_service.dart';
 import 'services/category_service.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ Future<void> main() async {
   await TransactionService.loadTransactions();
   await BudgetService.loadBudgets();
   await CategoryService.loadCategories();
+  await NotificationService.initialize();
 
   final prefs = await SharedPreferences.getInstance();
   final isDarkMode = prefs.getBool('dark_mode') ?? false;
