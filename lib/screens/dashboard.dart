@@ -14,7 +14,14 @@ import 'transaction_history.dart';
 import 'statistics.dart';
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key});
+  final VoidCallback? onToggleTheme;
+  final bool isDarkMode;
+
+  const Dashboard({
+    super.key,
+    this.onToggleTheme,
+    this.isDarkMode = false,
+  });
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -836,13 +843,25 @@ class _DashboardState extends State<Dashboard> {
         ),
 
         actions: [
+          if (widget.onToggleTheme != null)
+            IconButton(
+              onPressed: widget.onToggleTheme,
+              icon: Icon(
+                widget.isDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : const Color(0xFF172033),
+              ),
+            ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(
-              Icons
-                  .notifications_none_rounded,
-              color:
-                  Color(0xFF172033),
+            icon: Icon(
+              Icons.notifications_none_rounded,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : const Color(0xFF172033),
             ),
           ),
 

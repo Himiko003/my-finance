@@ -9,19 +9,11 @@ class TransactionHistory extends StatefulWidget {
   const TransactionHistory({super.key});
 
   @override
-  State<TransactionHistory> createState() =>
-      _TransactionHistoryState();
+  State<TransactionHistory> createState() => _TransactionHistoryState();
 }
 
-class _TransactionHistoryState
-    extends State<TransactionHistory> {
+class _TransactionHistoryState extends State<TransactionHistory> {
   String selectedFilter = 'Semua';
-
-  final Color primaryColor =
-      const Color(0xFF172033);
-
-  final Color backgroundColor =
-      const Color(0xFFF4F1EA);
 
   String formatRupiah(double amount) {
     final value = amount.toInt().toString();
@@ -62,403 +54,262 @@ class _TransactionHistoryState
   }
 
   List<TransactionModel> get filteredTransactions {
-    final transactions =
-        TransactionService.transactions;
+    final transactions = TransactionService.transactions;
 
     if (selectedFilter == 'Pemasukan') {
-      return transactions
-          .where(
-            (transaction) =>
-                transaction.isIncome,
-          )
-          .toList();
+      return transactions.where((transaction) => transaction.isIncome).toList();
     }
 
     if (selectedFilter == 'Pengeluaran') {
-      return transactions
-          .where(
-            (transaction) =>
-                !transaction.isIncome,
-          )
-          .toList();
+      return transactions.where((transaction) => !transaction.isIncome).toList();
     }
 
     return transactions;
   }
 
-  void editTransaction(
-    TransactionModel transaction,
-  ) {
-    final titleController =
-        TextEditingController(
-      text: transaction.title,
+  void editTransaction(TransactionModel transaction) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final iconColor = isDark ? const Color(0xFFE8B85C) : const Color(0xFF172033);
+    final accentColor = const Color(0xFFE8B85C);
+    final primaryBtnColor = isDark ? accentColor : const Color(0xFF172033);
+    final primaryBtnTextColor = isDark ? const Color(0xFF172033) : Colors.white;
+
+    final titleController = TextEditingController(text: transaction.title);
+    final amountController = TextEditingController(
+      text: _formatInputRupiah(transaction.amount),
     );
 
-    final amountController =
-        TextEditingController(
-      text: _formatInputRupiah(
-        transaction.amount,
-      ),
-    );
-
-    String selectedType =
-        transaction.isIncome
-            ? 'Pemasukan'
-            : 'Pengeluaran';
-
-    String selectedCategory =
-        transaction.category;
-
+    String selectedType = transaction.isIncome ? 'Pemasukan' : 'Pengeluaran';
+    String selectedCategory = transaction.category;
     final categories = CategoryService.categories;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: backgroundColor,
+      backgroundColor: cardColor,
       builder: (sheetContext) {
         return StatefulBuilder(
-          builder: (
-            context,
-            setSheetState,
-          ) {
-            final bool isIncome =
-                selectedType ==
-                    'Pemasukan';
+          builder: (context, setSheetState) {
+            final bool isIncome = selectedType == 'Pemasukan';
 
             return Padding(
               padding: EdgeInsets.fromLTRB(
                 20,
                 20,
                 20,
-                MediaQuery.of(context)
-                        .viewInsets
-                        .bottom +
-                    20,
+                MediaQuery.of(context).viewInsets.bottom + 20,
               ),
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
                       child: Container(
                         width: 40,
                         height: 4,
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              Colors.grey.shade400,
-                          borderRadius:
-                              BorderRadius
-                                  .circular(5),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(5),
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-                    const Text(
+                    Text(
                       'Edit Transaksi',
                       style: TextStyle(
-                        color:
-                            Color(0xFF172033),
+                        color: textColor,
                         fontSize: 22,
-                        fontWeight:
-                            FontWeight.w800,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-                    const Text(
+                    Text(
                       'Jenis transaksi',
                       style: TextStyle(
-                        fontWeight:
-                            FontWeight.w700,
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Row(
                       children: [
                         Expanded(
-                          child:
-                              GestureDetector(
+                          child: GestureDetector(
                             onTap: () {
                               setSheetState(() {
-                                selectedType =
-                                    'Pemasukan';
-
-                                selectedCategory =
-                                    'Pemasukan';
+                                selectedType = 'Pemasukan';
+                                selectedCategory = 'Pemasukan';
                               });
                             },
                             child: _typeButton(
-                              title:
-                                  'Pemasukan',
-                              icon: Icons
-                                  .south_west_rounded,
-                              selected:
-                                  isIncome,
-                              color:
-                                  const Color(
-                                0xFF2E8B57,
-                              ),
+                              title: 'Pemasukan',
+                              icon: Icons.south_west_rounded,
+                              selected: isIncome,
+                              color: const Color(0xFF2E8B57),
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 10),
-
                         Expanded(
-                          child:
-                              GestureDetector(
+                          child: GestureDetector(
                             onTap: () {
                               setSheetState(() {
-                                selectedType =
-                                    'Pengeluaran';
-
-                                if (selectedCategory ==
-                                    'Pemasukan') {
-                                  selectedCategory =
-                                      'Makanan';
+                                selectedType = 'Pengeluaran';
+                                if (selectedCategory == 'Pemasukan') {
+                                  selectedCategory = 'Makanan';
                                 }
                               });
                             },
                             child: _typeButton(
-                              title:
-                                  'Pengeluaran',
-                              icon: Icons
-                                  .north_east_rounded,
-                              selected:
-                                  !isIncome,
-                              color:
-                                  const Color(
-                                0xFFD35B5B,
-                              ),
+                              title: 'Pengeluaran',
+                              icon: Icons.north_east_rounded,
+                              selected: !isIncome,
+                              color: const Color(0xFFD35B5B),
                             ),
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 18),
-
-                    const Text(
+                    Text(
                       'Nama transaksi',
                       style: TextStyle(
-                        fontWeight:
-                            FontWeight.w700,
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     TextField(
-                      controller:
-                          titleController,
-                      decoration:
-                          _inputDecoration(
+                      controller: titleController,
+                      style: TextStyle(color: textColor),
+                      decoration: _inputDecoration(
                         'Nama transaksi',
-                        Icons
-                            .edit_note_rounded,
+                        Icons.edit_note_rounded,
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
-                    const Text(
+                    Text(
                       'Nominal',
                       style: TextStyle(
-                        fontWeight:
-                            FontWeight.w700,
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     TextField(
-                      controller:
-                          amountController,
-                      keyboardType:
-                          TextInputType.number,
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: textColor),
                       inputFormatters: [
                         _RupiahInputFormatter(),
                       ],
-                      decoration:
-                          _inputDecoration(
+                      decoration: _inputDecoration(
                         'Nominal',
-                        Icons
-                            .payments_outlined,
+                        Icons.payments_outlined,
                         prefix: 'Rp ',
                       ),
                     ),
-
                     if (!isIncome) ...[
                       const SizedBox(height: 18),
-
-                      const Text(
+                      Text(
                         'Kategori',
                         style: TextStyle(
-                          fontWeight:
-                              FontWeight.w700,
+                          color: textColor,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
-                      DropdownButtonFormField<
-                          String>(
-                        initialValue:
-                            categories.any(
-                          (category) =>
-                              category['name'] ==
-                              selectedCategory,
+                      DropdownButtonFormField<String>(
+                        initialValue: categories.any(
+                          (category) => category['name'] == selectedCategory,
                         )
-                                ? selectedCategory
-                                : categories
-                                    .first['name']
-                                    .toString(),
-                        decoration:
-                            _inputDecoration(
+                            ? selectedCategory
+                            : categories.first['name'].toString(),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        decoration: _inputDecoration(
                           'Kategori',
-                          Icons
-                              .category_outlined,
+                          Icons.category_outlined,
                         ),
-                        items: categories
-                            .map(
-                              (category) {
-                                return DropdownMenuItem<
-                                    String>(
-                                  value:
-                                      category[
-                                              'name']
-                                          .toString(),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        category[
-                                            'icon'],
-                                        size: 18,
-                                        color:
-                                            primaryColor,
-                                      ),
-                                      const SizedBox(
-                                        width: 8,
-                                      ),
-                                      Text(
-                                        category[
-                                                'name']
-                                            .toString(),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            )
-                            .toList(),
+                        items: categories.map((category) {
+                          return DropdownMenuItem<String>(
+                            value: category['name'].toString(),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  category['icon'],
+                                  size: 18,
+                                  color: iconColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  category['name'].toString(),
+                                  style: TextStyle(color: textColor),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                         onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
-
+                          if (value == null) return;
                           setSheetState(() {
-                            selectedCategory =
-                                value;
+                            selectedCategory = value;
                           });
                         },
                       ),
                     ],
-
                     const SizedBox(height: 25),
-
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
                         onPressed: () {
-                          final title =
-                              titleController
-                                  .text
-                                  .trim();
+                          final title = titleController.text.trim();
+                          final amount = _parseRupiah(amountController.text);
 
-                          final amount =
-                              _parseRupiah(
-                            amountController
-                                .text,
-                          );
-
-                          if (title.isEmpty ||
-                              amount == null ||
-                              amount <= 0) {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(
+                          if (title.isEmpty || amount == null || amount <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
-                                  'Data transaksi tidak valid',
-                                ),
+                                content: Text('Data transaksi tidak valid'),
                               ),
                             );
                             return;
                           }
 
-                          final updated =
-                              TransactionModel(
+                          final updated = TransactionModel(
                             id: transaction.id,
                             title: title,
-                            category:
-                                selectedCategory,
+                            category: selectedCategory,
                             amount: amount,
-                            isIncome:
-                                isIncome,
-                            date:
-                                transaction.date,
+                            isIncome: isIncome,
+                            date: transaction.date,
                           );
 
-                          TransactionService
-                              .updateTransaction(
-                            updated,
-                          );
+                          TransactionService.updateTransaction(updated);
 
                           setState(() {});
+                          Navigator.pop(sheetContext);
 
-                          Navigator.pop(
-                            sheetContext,
-                          );
-
-                          ScaffoldMessenger.of(
-                            this.context,
-                          ).showSnackBar(
+                          ScaffoldMessenger.of(this.context).showSnackBar(
                             const SnackBar(
-                              content: Text(
-                                'Transaksi diperbarui',
-                              ),
+                              content: Text('Transaksi diperbarui'),
                             ),
                           );
                         },
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              primaryColor,
-                          foregroundColor:
-                              Colors.white,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBtnColor,
+                          foregroundColor: primaryBtnTextColor,
                           elevation: 0,
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                              15,
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
                           ),
                         ),
                         child: const Text(
                           'Simpan Perubahan',
                           style: TextStyle(
-                            fontWeight:
-                                FontWeight.w800,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -473,164 +324,106 @@ class _TransactionHistoryState
     );
   }
 
-  void deleteTransaction(
-    TransactionModel transaction,
-  ) {
+  void deleteTransaction(TransactionModel transaction) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: backgroundColor,
+      backgroundColor: cardColor,
       builder: (sheetContext) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            30,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
           child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color:
-                      Colors.grey.shade400,
-                  borderRadius:
-                      BorderRadius.circular(5),
+                  color: isDark ? Colors.white24 : Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(5),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               Container(
                 width: 55,
                 height: 55,
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(0xFFFBE9E9),
-                  borderRadius:
-                      BorderRadius.circular(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD35B5B).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
-                  Icons
-                      .delete_outline_rounded,
-                  color:
-                      Color(0xFFD35B5B),
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFD35B5B),
                   size: 27,
                 ),
               ),
-
               const SizedBox(height: 15),
-
-              const Text(
+              Text(
                 'Hapus transaksi?',
                 style: TextStyle(
+                  color: textColor,
                   fontSize: 19,
-                  fontWeight:
-                      FontWeight.w800,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               Text(
-                'Transaksi "${transaction.title}" '
-                'akan dihapus secara permanen.',
-                textAlign:
-                    TextAlign.center,
+                'Transaksi "${transaction.title}" akan dihapus secara permanen.',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  color:
-                      Colors.grey.shade600,
+                  color: mutedTextColor,
                   fontSize: 12,
                 ),
               ),
-
               const SizedBox(height: 22),
-
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        Navigator.pop(
-                          sheetContext,
-                        );
+                        Navigator.pop(sheetContext);
                       },
-                      style: OutlinedButton
-                          .styleFrom(
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          vertical: 14,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: textColor,
+                        side: BorderSide(
+                          color: isDark ? Colors.white24 : Colors.grey.shade300,
                         ),
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            14,
-                          ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child:
-                          const Text('Batal'),
+                      child: const Text('Batal'),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        TransactionService
-                            .deleteTransaction(
-                          transaction.id,
-                        );
-
+                        TransactionService.deleteTransaction(transaction.id);
                         setState(() {});
+                        Navigator.pop(sheetContext);
 
-                        Navigator.pop(
-                          sheetContext,
-                        );
-
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                              'Transaksi dihapus',
-                            ),
+                            content: Text('Transaksi dihapus'),
                           ),
                         );
                       },
-                      style: ElevatedButton
-                          .styleFrom(
-                        backgroundColor:
-                            const Color(
-                          0xFFD35B5B,
-                        ),
-                        foregroundColor:
-                            Colors.white,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD35B5B),
+                        foregroundColor: Colors.white,
                         elevation: 0,
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          vertical: 14,
-                        ),
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            14,
-                          ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child:
-                          const Text('Hapus'),
+                      child: const Text('Hapus'),
                     ),
                   ),
                 ],
@@ -644,31 +437,29 @@ class _TransactionHistoryState
 
   @override
   Widget build(BuildContext context) {
-    final transactions =
-        filteredTransactions;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F1522) : const Color(0xFFF4F1EA);
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
+    final transactions = filteredTransactions;
 
     return Scaffold(
-      backgroundColor:
-          backgroundColor,
-
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor:
-            backgroundColor,
+        backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 20,
+        iconTheme: IconThemeData(color: textColor),
         title: Row(
           children: [
             Container(
               width: 38,
               height: 38,
-              decoration:
-                  BoxDecoration(
-                color: primaryColor,
-                borderRadius:
-                    BorderRadius.circular(
-                  11,
-                ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF172033),
+                borderRadius: BorderRadius.circular(11),
               ),
               child: const Icon(
                 Icons.receipt_long_rounded,
@@ -676,150 +467,92 @@ class _TransactionHistoryState
                 size: 20,
               ),
             ),
-
             const SizedBox(width: 11),
-
-            const Text(
+            Text(
               'Riwayat',
               style: TextStyle(
-                color:
-                    Color(0xFF172033),
+                color: textColor,
                 fontSize: 20,
-                fontWeight:
-                    FontWeight.w800,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
         ),
       ),
-
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: ListView(
-                padding:
-                    const EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  30,
-                ),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
                 children: [
-                  const Text(
+                  Text(
                     'Aktivitas',
                     style: TextStyle(
-                      color:
-                          Color(0xFF172033),
+                      color: textColor,
                       fontSize: 28,
-                      fontWeight:
-                          FontWeight.w800,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-
                   const SizedBox(height: 5),
-
                   Text(
                     'Semua transaksi yang sudah kamu catat.',
                     style: TextStyle(
-                      color:
-                          Colors.grey.shade600,
+                      color: mutedTextColor,
                       fontSize: 13,
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   Row(
                     children: [
                       Expanded(
                         child: _SummaryCard(
                           title: 'Masuk',
-                          amount:
-                              formatRupiah(
-                            TransactionService
-                                .totalIncome,
-                          ),
-                          icon: Icons
-                              .south_west_rounded,
-                          color:
-                              const Color(
-                            0xFF2E8B57,
-                          ),
+                          amount: formatRupiah(TransactionService.totalIncome),
+                          icon: Icons.south_west_rounded,
+                          color: const Color(0xFF2E8B57),
                         ),
                       ),
-
                       const SizedBox(width: 10),
-
                       Expanded(
                         child: _SummaryCard(
                           title: 'Keluar',
-                          amount:
-                              formatRupiah(
-                            TransactionService
-                                .totalExpense,
-                          ),
-                          icon: Icons
-                              .north_east_rounded,
-                          color:
-                              const Color(
-                            0xFFD35B5B,
-                          ),
+                          amount: formatRupiah(TransactionService.totalExpense),
+                          icon: Icons.north_east_rounded,
+                          color: const Color(0xFFD35B5B),
                         ),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
                   SingleChildScrollView(
-                    scrollDirection:
-                        Axis.horizontal,
+                    scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _filterButton(
-                          'Semua',
-                        ),
-                        const SizedBox(
-                          width: 8,
-                        ),
-                        _filterButton(
-                          'Pemasukan',
-                        ),
-                        const SizedBox(
-                          width: 8,
-                        ),
-                        _filterButton(
-                          'Pengeluaran',
-                        ),
+                        _filterButton('Semua'),
+                        const SizedBox(width: 8),
+                        _filterButton('Pemasukan'),
+                        const SizedBox(width: 8),
+                        _filterButton('Pengeluaran'),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   if (transactions.isEmpty)
                     _emptyState()
                   else
                     ...transactions.map(
                       (transaction) {
                         return _TransactionCard(
-                          transaction:
-                              transaction,
-                          formatRupiah:
-                              formatRupiah,
+                          transaction: transaction,
+                          formatRupiah: formatRupiah,
                           onEdit: () {
-                            editTransaction(
-                              transaction,
-                            );
+                            editTransaction(transaction);
                           },
                           onDelete: () {
-                            deleteTransaction(
-                              transaction,
-                            );
+                            deleteTransaction(transaction);
                           },
-                          monthName:
-                              monthName,
+                          monthName: monthName,
                         );
                       },
                     ),
@@ -832,11 +565,15 @@ class _TransactionHistoryState
     );
   }
 
-  Widget _filterButton(
-    String filter,
-  ) {
-    final selected =
-        selectedFilter == filter;
+  Widget _filterButton(String filter) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade700;
+    final accentColor = const Color(0xFFE8B85C);
+    final activeBtnColor = isDark ? accentColor : const Color(0xFF172033);
+    final activeTextColor = isDark ? const Color(0xFF172033) : Colors.white;
+
+    final selected = selectedFilter == filter;
 
     return GestureDetector(
       onTap: () {
@@ -845,31 +582,18 @@ class _TransactionHistoryState
         });
       },
       child: AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 180,
-        ),
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 9,
-        ),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: selected
-              ? primaryColor
-              : Colors.white,
-          borderRadius:
-              BorderRadius.circular(12),
+          color: selected ? activeBtnColor : cardColor,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           filter,
           style: TextStyle(
-            color: selected
-                ? Colors.white
-                : Colors.grey.shade700,
+            color: selected ? activeTextColor : mutedTextColor,
             fontSize: 12,
-            fontWeight:
-                FontWeight.w700,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -877,17 +601,18 @@ class _TransactionHistoryState
   }
 
   Widget _emptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final inputBgColor = isDark ? const Color(0xFF202A3A) : const Color(0xFFF4F1EA);
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 45,
-        horizontal: 20,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 45, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(20),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
@@ -895,39 +620,30 @@ class _TransactionHistoryState
             width: 65,
             height: 65,
             decoration: BoxDecoration(
-              color: backgroundColor,
+              color: inputBgColor,
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons
-                  .receipt_long_outlined,
+              Icons.receipt_long_outlined,
               size: 30,
-              color:
-                  Colors.grey.shade500,
+              color: mutedTextColor,
             ),
           ),
-
           const SizedBox(height: 15),
-
-          const Text(
+          Text(
             'Belum ada transaksi',
             style: TextStyle(
+              color: textColor,
               fontSize: 16,
-              fontWeight:
-                  FontWeight.w800,
+              fontWeight: FontWeight.w800,
             ),
           ),
-
           const SizedBox(height: 5),
-
           Text(
-            'Transaksi yang kamu tambahkan '
-            'akan muncul di sini.',
-            textAlign:
-                TextAlign.center,
+            'Transaksi yang kamu tambahkan akan muncul di sini.',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color:
-                  Colors.grey.shade600,
+              color: mutedTextColor,
               fontSize: 12,
             ),
           ),
@@ -941,18 +657,27 @@ class _TransactionHistoryState
     IconData icon, {
     String? prefix,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inputBgColor = isDark ? const Color(0xFF202A3A) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+    final iconColor = isDark ? const Color(0xFFE8B85C) : const Color(0xFF172033);
+    final accentColor = const Color(0xFFE8B85C);
+
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: mutedTextColor),
       prefixText: prefix,
+      prefixStyle: prefix != null
+          ? TextStyle(color: accentColor, fontWeight: FontWeight.w700)
+          : null,
       prefixIcon: Icon(
         icon,
-        color: primaryColor,
+        color: iconColor,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: inputBgColor,
       border: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
     );
@@ -964,51 +689,38 @@ class _TransactionHistoryState
     required bool selected,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade700;
+
     return AnimatedContainer(
-      duration:
-          const Duration(
-        milliseconds: 180,
-      ),
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 13,
-      ),
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.symmetric(vertical: 13),
       decoration: BoxDecoration(
         color: selected
-            ? color.withValues(
-                alpha: 0.1,
-              )
-            : Colors.white,
-        borderRadius:
-            BorderRadius.circular(14),
+            ? color.withValues(alpha: isDark ? 0.20 : 0.10)
+            : cardColor,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: selected
-              ? color.withValues(
-                  alpha: 0.25,
-                )
-              : Colors.transparent,
+              ? color.withValues(alpha: isDark ? 0.50 : 0.25)
+              : (isDark ? Colors.white10 : Colors.transparent),
         ),
       ),
       child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             icon,
             size: 17,
-            color: selected
-                ? color
-                : Colors.grey,
+            color: selected ? color : mutedTextColor,
           ),
           const SizedBox(width: 6),
           Text(
             title,
             style: TextStyle(
-              color: selected
-                  ? color
-                  : Colors.grey.shade700,
-              fontWeight:
-                  FontWeight.w700,
+              color: selected ? color : mutedTextColor,
+              fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
           ),
@@ -1018,8 +730,7 @@ class _TransactionHistoryState
   }
 }
 
-class _SummaryCard
-    extends StatelessWidget {
+class _SummaryCard extends StatelessWidget {
   final String title;
   final String amount;
   final IconData icon;
@@ -1033,16 +744,16 @@ class _SummaryCard
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     return Container(
-      padding:
-          const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
@@ -1050,14 +761,8 @@ class _SummaryCard
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color:
-                  color.withValues(
-                alpha: 0.09,
-              ),
-              borderRadius:
-                  BorderRadius.circular(
-                11,
-              ),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(
               icon,
@@ -1065,34 +770,26 @@ class _SummaryCard
               size: 19,
             ),
           ),
-
           const SizedBox(width: 10),
-
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
                   style: TextStyle(
-                    color:
-                        Colors.grey.shade600,
+                    color: mutedTextColor,
                     fontSize: 11,
                   ),
                 ),
-
                 const SizedBox(height: 3),
-
                 Text(
                   amount,
-                  overflow:
-                      TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: color,
                     fontSize: 13,
-                    fontWeight:
-                        FontWeight.w800,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -1104,18 +801,12 @@ class _SummaryCard
   }
 }
 
-class _TransactionCard
-    extends StatelessWidget {
+class _TransactionCard extends StatelessWidget {
   final TransactionModel transaction;
-
-  final String Function(double)
-      formatRupiah;
-
+  final String Function(double) formatRupiah;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-
-  final String Function(int)
-      monthName;
+  final String Function(int) monthName;
 
   const _TransactionCard({
     required this.transaction,
@@ -1126,130 +817,100 @@ class _TransactionCard
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    final bool isIncome =
-        transaction.isIncome;
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
 
-    final Color color = isIncome
-        ? const Color(0xFF2E8B57)
-        : const Color(0xFFD35B5B);
+    final bool isIncome = transaction.isIncome;
+    final Color color = isIncome ? const Color(0xFF2E8B57) : const Color(0xFFD35B5B);
 
     return Container(
-      margin:
-          const EdgeInsets.only(
-        bottom: 10,
-      ),
-      padding:
-          const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
           Container(
             width: 45,
             height: 45,
-            decoration:
-                BoxDecoration(
-              color:
-                  color.withValues(
-                alpha: 0.09,
-              ),
-              borderRadius:
-                  BorderRadius.circular(
-                13,
-              ),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(
-              isIncome
-                  ? Icons
-                      .south_west_rounded
-                  : Icons
-                      .north_east_rounded,
+              isIncome ? Icons.south_west_rounded : Icons.north_east_rounded,
               color: color,
               size: 21,
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   transaction.title,
-                  style:
-                      const TextStyle(
-                    fontWeight:
-                        FontWeight.w800,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w800,
                     fontSize: 14,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
-                  '${transaction.category} • '
-                  '${transaction.date.day} '
-                  '${monthName(transaction.date.month)} '
-                  '${transaction.date.year}',
+                  '${transaction.category} • ${transaction.date.day} ${monthName(transaction.date.month)} ${transaction.date.year}',
                   style: TextStyle(
-                    color:
-                        Colors.grey.shade600,
+                    color: mutedTextColor,
                     fontSize: 10,
                   ),
                 ),
-
                 const SizedBox(height: 7),
-
                 Text(
-                  '${isIncome ? '+' : '-'} '
-                  '${formatRupiah(transaction.amount)}',
+                  '${isIncome ? '+' : '-'} ${formatRupiah(transaction.amount)}',
                   style: TextStyle(
                     color: color,
-                    fontWeight:
-                        FontWeight.w800,
+                    fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
                 ),
               ],
             ),
           ),
-
           PopupMenuButton<String>(
+            color: cardColor,
             icon: Icon(
               Icons.more_vert_rounded,
-              color:
-                  Colors.grey.shade600,
+              color: mutedTextColor,
             ),
             onSelected: (value) {
               if (value == 'edit') {
                 onEdit();
               }
-
               if (value == 'delete') {
                 onDelete();
               }
             },
             itemBuilder: (context) {
-              return const [
+              return [
                 PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
                       Icon(
-                        Icons
-                            .edit_outlined,
+                        Icons.edit_outlined,
                         size: 19,
+                        color: textColor,
                       ),
-                      SizedBox(width: 10),
-                      Text('Edit'),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Edit',
+                        style: TextStyle(color: textColor),
+                      ),
                     ],
                   ),
                 ),
@@ -1257,14 +918,16 @@ class _TransactionCard
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(
-                        Icons
-                            .delete_outline,
+                      const Icon(
+                        Icons.delete_outline,
                         size: 19,
                         color: Colors.red,
                       ),
-                      SizedBox(width: 10),
-                      Text('Hapus'),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Hapus',
+                        style: TextStyle(color: textColor),
+                      ),
                     ],
                   ),
                 ),
@@ -1277,25 +940,17 @@ class _TransactionCard
   }
 }
 
-String _formatInputRupiah(
-  double amount,
-) {
-  final digits =
-      amount.toInt().toString();
+String _formatInputRupiah(double amount) {
+  final digits = amount.toInt().toString();
 
   return digits.replaceAllMapped(
-    RegExp(
-      r'\B(?=(\d{3})+(?!\d))',
-    ),
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (match) => '.',
   );
 }
 
-double? _parseRupiah(
-  String value,
-) {
-  final digits =
-      value.replaceAll('.', '').trim();
+double? _parseRupiah(String value) {
+  final digits = value.replaceAll('.', '').trim();
 
   if (digits.isEmpty) {
     return null;
@@ -1304,15 +959,13 @@ double? _parseRupiah(
   return double.tryParse(digits);
 }
 
-class _RupiahInputFormatter
-    extends TextInputFormatter {
+class _RupiahInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digits =
-        newValue.text.replaceAll(
+    final digits = newValue.text.replaceAll(
       RegExp(r'[^0-9]'),
       '',
     );
@@ -1321,25 +974,20 @@ class _RupiahInputFormatter
       return const TextEditingValue();
     }
 
-    final number =
-        int.tryParse(digits);
+    final number = int.tryParse(digits);
 
     if (number == null) {
       return oldValue;
     }
 
-    final formatted =
-        number.toString().replaceAllMapped(
-              RegExp(
-                r'\B(?=(\d{3})+(?!\d))',
-              ),
-              (match) => '.',
-            );
+    final formatted = number.toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => '.',
+        );
 
     return TextEditingValue(
       text: formatted,
-      selection:
-          TextSelection.collapsed(
+      selection: TextSelection.collapsed(
         offset: formatted.length,
       ),
     );

@@ -9,28 +9,14 @@ class AddTransaction extends StatefulWidget {
   const AddTransaction({super.key});
 
   @override
-  State<AddTransaction> createState() =>
-      _AddTransactionState();
+  State<AddTransaction> createState() => _AddTransactionState();
 }
 
 class _AddTransactionState extends State<AddTransaction> {
-  final Color primaryColor =
-      const Color(0xFF172033);
-
-  final Color backgroundColor =
-      const Color(0xFFF4F1EA);
-
-  final Color accentColor =
-      const Color(0xFFE8B85C);
-
-  final TextEditingController titleController =
-      TextEditingController();
-
-  final TextEditingController amountController =
-      TextEditingController();
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
   bool isIncome = false;
-
   String selectedCategory = 'Makanan';
 
   // ============================================================
@@ -39,8 +25,7 @@ class _AddTransactionState extends State<AddTransaction> {
 
   DateTime selectedDate = DateTime.now();
 
-  List<Map<String, dynamic>> get categories =>
-      CategoryService.categories;
+  List<Map<String, dynamic>> get categories => CategoryService.categories;
 
   @override
   void dispose() {
@@ -54,8 +39,7 @@ class _AddTransactionState extends State<AddTransaction> {
   // ============================================================
 
   String formatInputRupiah(String value) {
-    final digits =
-        value.replaceAll(RegExp(r'[^0-9]'), '');
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (digits.isEmpty) {
       return '';
@@ -74,8 +58,7 @@ class _AddTransactionState extends State<AddTransaction> {
   }
 
   double? parseRupiah(String value) {
-    final digits =
-        value.replaceAll('.', '').trim();
+    final digits = value.replaceAll('.', '').trim();
 
     if (digits.isEmpty) {
       return null;
@@ -89,8 +72,12 @@ class _AddTransactionState extends State<AddTransaction> {
   // ============================================================
 
   Future<void> selectTransactionDate() async {
-    final DateTime? pickedDate =
-        await showDatePicker(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final accentColor = const Color(0xFFE8B85C);
+
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
@@ -101,12 +88,19 @@ class _AddTransactionState extends State<AddTransaction> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF172033),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF172033),
-            ),
+            colorScheme: isDark
+                ? ColorScheme.dark(
+                    primary: accentColor,
+                    onPrimary: const Color(0xFF172033),
+                    surface: cardColor,
+                    onSurface: textColor,
+                  )
+                : const ColorScheme.light(
+                    primary: Color(0xFF172033),
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Color(0xFF172033),
+                  ),
           ),
           child: child!,
         );
@@ -146,138 +140,104 @@ class _AddTransactionState extends State<AddTransaction> {
   // ============================================================
 
   Future<void> showAddCategoryDialog() async {
-    final categoryController =
-        TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final inputBgColor = isDark ? const Color(0xFF202A3A) : Colors.grey.shade100;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+    final iconColor = isDark ? const Color(0xFFE8B85C) : const Color(0xFF172033);
+    final accentColor = const Color(0xFFE8B85C);
+    final primaryBtnColor = isDark ? accentColor : const Color(0xFF172033);
+    final primaryBtnTextColor = isDark ? const Color(0xFF172033) : Colors.white;
 
+    final categoryController = TextEditingController();
     String selectedIconKey = 'category';
+    final iconOptions = CategoryService.iconOptions;
 
-    final iconOptions =
-        CategoryService.iconOptions;
-
-    final result =
-        await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (
-            context,
-            setDialogState,
-          ) {
+          builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
-              title: const Text(
+              backgroundColor: cardColor,
+              title: Text(
                 'Tambah Kategori',
                 style: TextStyle(
-                  color: Color(0xFF172033),
-                  fontWeight:
-                      FontWeight.w800,
+                  color: textColor,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               content: SizedBox(
                 width: 420,
                 height: 430,
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextField(
-                      controller:
-                          categoryController,
-                      textCapitalization:
-                          TextCapitalization.words,
-                      decoration:
-                          const InputDecoration(
-                        labelText:
-                            'Nama Kategori',
-                        hintText:
-                            'Contoh: Investasi',
+                      controller: categoryController,
+                      textCapitalization: TextCapitalization.words,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        labelText: 'Nama Kategori',
+                        labelStyle: TextStyle(color: mutedTextColor),
+                        hintText: 'Contoh: Investasi',
+                        hintStyle: TextStyle(color: mutedTextColor),
                         prefixIcon: Icon(
-                          Icons
-                              .category_outlined,
+                          Icons.category_outlined,
+                          color: iconColor,
+                        ),
+                        filled: true,
+                        fillColor: inputBgColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
                         ),
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text(
+                    Text(
                       'Pilih Icon',
                       style: TextStyle(
-                        fontWeight:
-                            FontWeight.w700,
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Expanded(
-                      child:
-                          GridView.builder(
-                        itemCount:
-                            iconOptions.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
+                      child: GridView.builder(
+                        itemCount: iconOptions.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
-                        itemBuilder:
-                            (context, index) {
-                          final key =
-                              iconOptions.keys
-                                  .elementAt(
-                                      index);
-
-                          final icon =
-                              iconOptions[
-                                  key]!;
-
-                          final selected =
-                              selectedIconKey ==
-                                  key;
+                        itemBuilder: (context, index) {
+                          final key = iconOptions.keys.elementAt(index);
+                          final icon = iconOptions[key]!;
+                          final selected = selectedIconKey == key;
 
                           return InkWell(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                                        14),
+                            borderRadius: BorderRadius.circular(14),
                             onTap: () {
-                              setDialogState(
-                                () {
-                                  selectedIconKey =
-                                      key;
-                                },
-                              );
+                              setDialogState(() {
+                                selectedIconKey = key;
+                              });
                             },
-                            child:
-                                Container(
-                              decoration:
-                                  BoxDecoration(
+                            child: Container(
+                              decoration: BoxDecoration(
                                 color: selected
-                                    ? accentColor
-                                        .withValues(
-                                        alpha:
-                                            0.20,
-                                      )
-                                    : Colors
-                                        .grey
-                                        .shade100,
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                            14),
-                                border:
-                                    Border.all(
-                                  color: selected
-                                      ? accentColor
-                                      : Colors
-                                          .transparent,
+                                    ? accentColor.withValues(alpha: 0.20)
+                                    : inputBgColor,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: selected ? accentColor : Colors.transparent,
                                   width: 2,
                                 ),
                               ),
                               child: Icon(
                                 icon,
-                                color: selected
-                                    ? primaryColor
-                                    : Colors
-                                        .grey
-                                        .shade600,
+                                color: selected ? accentColor : mutedTextColor,
                               ),
                             ),
                           );
@@ -290,77 +250,49 @@ class _AddTransactionState extends State<AddTransaction> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(
-                      dialogContext,
-                      false,
-                    );
+                    Navigator.pop(dialogContext, false);
                   },
-                  child:
-                      const Text('Batal'),
+                  child: Text(
+                    'Batal',
+                    style: TextStyle(color: mutedTextColor),
+                  ),
                 ),
                 ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        primaryColor,
-                    foregroundColor:
-                        Colors.white,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBtnColor,
+                    foregroundColor: primaryBtnTextColor,
                   ),
                   onPressed: () async {
-                    final name =
-                        categoryController
-                            .text
-                            .trim();
+                    final name = categoryController.text.trim();
 
                     if (name.isEmpty) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Nama kategori belum diisi.',
-                          ),
+                          content: Text('Nama kategori belum diisi.'),
                         ),
                       );
                       return;
                     }
 
-                    final success =
-                        await CategoryService
-                            .addCategory(
+                    final success = await CategoryService.addCategory(
                       name,
-                      iconKey:
-                          selectedIconKey,
+                      iconKey: selectedIconKey,
                     );
 
                     if (!success) {
-                      if (!context.mounted) {
-                        return;
-                      }
-
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Kategori sudah ada.',
-                          ),
+                          content: Text('Kategori sudah ada.'),
                         ),
                       );
                       return;
                     }
 
-                    if (!context.mounted) {
-                      return;
-                    }
-
-                    Navigator.pop(
-                      dialogContext,
-                      true,
-                    );
+                    if (!context.mounted) return;
+                    Navigator.pop(dialogContext, true);
                   },
-                  child:
-                      const Text('Simpan'),
+                  child: const Text('Simpan'),
                 ),
               ],
             );
@@ -374,14 +306,11 @@ class _AddTransactionState extends State<AddTransaction> {
     if (result == true) {
       setState(() {});
 
-      final customCategories =
-          CategoryService.customCategories;
+      final customCategories = CategoryService.customCategories;
 
       if (customCategories.isNotEmpty) {
         setState(() {
-          selectedCategory =
-              customCategories.last['name']
-                  .toString();
+          selectedCategory = customCategories.last['name'].toString();
         });
       }
     }
@@ -391,47 +320,47 @@ class _AddTransactionState extends State<AddTransaction> {
   // HAPUS KATEGORI CUSTOM
   // ============================================================
 
-  Future<void> deleteCustomCategory(
-    String categoryName,
-  ) async {
-    final confirmed =
-        await showDialog<bool>(
+  Future<void> deleteCustomCategory(String categoryName) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
+          backgroundColor: cardColor,
+          title: Text(
             'Hapus kategori?',
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: Text(
             'Kategori "$categoryName" akan dihapus.',
+            style: TextStyle(color: textColor),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
+                Navigator.pop(dialogContext, false);
               },
-              child:
-                  const Text('Batal'),
+              child: Text(
+                'Batal',
+                style: TextStyle(color: mutedTextColor),
+              ),
             ),
             ElevatedButton(
-              style:
-                  ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.red,
-                foregroundColor:
-                    Colors.white,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
               ),
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
+                Navigator.pop(dialogContext, true);
               },
-              child:
-                  const Text('Hapus'),
+              child: const Text('Hapus'),
             ),
           ],
         );
@@ -442,16 +371,12 @@ class _AddTransactionState extends State<AddTransaction> {
       return;
     }
 
-    await CategoryService
-        .deleteCategory(categoryName);
+    await CategoryService.deleteCategory(categoryName);
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
-      if (selectedCategory ==
-          categoryName) {
+      if (selectedCategory == categoryName) {
         selectedCategory = 'Makanan';
       }
     });
@@ -466,30 +391,35 @@ class _AddTransactionState extends State<AddTransaction> {
     IconData icon, {
     String? prefix,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inputBgColor = isDark ? const Color(0xFF202A3A) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+    final iconColor = isDark ? const Color(0xFFE8B85C) : const Color(0xFF172033);
+    final accentColor = const Color(0xFFE8B85C);
+
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: mutedTextColor),
       prefixText: prefix,
+      prefixStyle: prefix != null
+          ? TextStyle(color: accentColor, fontWeight: FontWeight.w700)
+          : null,
       prefixIcon: Icon(
         icon,
-        color: primaryColor,
+        color: iconColor,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: inputBgColor,
       border: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(14),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
           color: accentColor,
           width: 1.5,
@@ -503,56 +433,32 @@ class _AddTransactionState extends State<AddTransaction> {
   // ============================================================
 
   Future<void> saveTransaction() async {
-    final title =
-        titleController.text.trim();
+    final title = titleController.text.trim();
+    final amount = parseRupiah(amountController.text);
 
-    final amount =
-        parseRupiah(
-      amountController.text,
-    );
-
-    if (title.isEmpty ||
-        amount == null ||
-        amount <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+    if (title.isEmpty || amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Data transaksi belum valid.',
-          ),
+          content: Text('Data transaksi belum valid.'),
         ),
       );
       return;
     }
 
-    final transaction =
-        TransactionModel(
-      id: DateTime.now()
-          .millisecondsSinceEpoch
-          .toString(),
+    final transaction = TransactionModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
-      category: isIncome
-          ? 'Pemasukan'
-          : selectedCategory,
+      category: isIncome ? 'Pemasukan' : selectedCategory,
       amount: amount,
       isIncome: isIncome,
       date: selectedDate,
     );
 
-    await TransactionService
-        .addTransaction(
-      transaction,
-    );
+    await TransactionService.addTransaction(transaction);
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
-    Navigator.pop(
-      context,
-      transaction,
-    );
+    Navigator.pop(context, transaction);
   }
 
   // ============================================================
@@ -561,53 +467,55 @@ class _AddTransactionState extends State<AddTransaction> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F1522) : const Color(0xFFF4F1EA);
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+    final iconColor = isDark ? const Color(0xFFE8B85C) : const Color(0xFF172033);
+    final accentColor = const Color(0xFFE8B85C);
+    final primaryBtnColor = isDark ? accentColor : const Color(0xFF172033);
+    final primaryBtnTextColor = isDark ? const Color(0xFF172033) : Colors.white;
+
     return Scaffold(
-      backgroundColor:
-          backgroundColor,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor:
-            backgroundColor,
+        backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 20,
-        iconTheme:
-            const IconThemeData(
-          color: Color(0xFF172033),
+        iconTheme: IconThemeData(
+          color: textColor,
         ),
-        title: const Text(
+        title: Text(
           'Tambah Transaksi',
           style: TextStyle(
-            color: Color(0xFF172033),
-            fontWeight:
-                FontWeight.w800,
+            color: textColor,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.fromLTRB(
+          padding: const EdgeInsets.fromLTRB(
             20,
             10,
             20,
             30,
           ),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ==================================================
               // HEADER
               // ==================================================
 
-              const Text(
+              Text(
                 'Catat Transaksi',
                 style: TextStyle(
-                  color:
-                      Color(0xFF172033),
+                  color: textColor,
                   fontSize: 27,
-                  fontWeight:
-                      FontWeight.w800,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
 
@@ -616,8 +524,7 @@ class _AddTransactionState extends State<AddTransaction> {
               Text(
                 'Masukkan detail transaksi kamu.',
                 style: TextStyle(
-                  color:
-                      Colors.grey.shade600,
+                  color: mutedTextColor,
                   fontSize: 13,
                 ),
               ),
@@ -628,11 +535,11 @@ class _AddTransactionState extends State<AddTransaction> {
               // JENIS TRANSAKSI
               // ==================================================
 
-              const Text(
+              Text(
                 'Jenis transaksi',
                 style: TextStyle(
-                  fontWeight:
-                      FontWeight.w700,
+                  color: textColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
 
@@ -641,25 +548,17 @@ class _AddTransactionState extends State<AddTransaction> {
               Row(
                 children: [
                   Expanded(
-                    child:
-                        GestureDetector(
+                    child: GestureDetector(
                       onTap: () {
                         setState(() {
                           isIncome = true;
                         });
                       },
-                      child:
-                          _typeButton(
-                        title:
-                            'Pemasukan',
-                        icon: Icons
-                            .south_west_rounded,
-                        selected:
-                            isIncome,
-                        color:
-                            const Color(
-                          0xFF2E8B57,
-                        ),
+                      child: _typeButton(
+                        title: 'Pemasukan',
+                        icon: Icons.south_west_rounded,
+                        selected: isIncome,
+                        color: const Color(0xFF2E8B57),
                       ),
                     ),
                   ),
@@ -667,31 +566,21 @@ class _AddTransactionState extends State<AddTransaction> {
                   const SizedBox(width: 10),
 
                   Expanded(
-                    child:
-                        GestureDetector(
+                    child: GestureDetector(
                       onTap: () {
                         setState(() {
                           isIncome = false;
 
-                          if (selectedCategory ==
-                              'Pemasukan') {
-                            selectedCategory =
-                                'Makanan';
+                          if (selectedCategory == 'Pemasukan') {
+                            selectedCategory = 'Makanan';
                           }
                         });
                       },
-                      child:
-                          _typeButton(
-                        title:
-                            'Pengeluaran',
-                        icon: Icons
-                            .north_east_rounded,
-                        selected:
-                            !isIncome,
-                        color:
-                            const Color(
-                          0xFFD35B5B,
-                        ),
+                      child: _typeButton(
+                        title: 'Pengeluaran',
+                        icon: Icons.north_east_rounded,
+                        selected: !isIncome,
+                        color: const Color(0xFFD35B5B),
                       ),
                     ),
                   ),
@@ -704,27 +593,23 @@ class _AddTransactionState extends State<AddTransaction> {
               // NAMA TRANSAKSI
               // ==================================================
 
-              const Text(
+              Text(
                 'Nama transaksi',
                 style: TextStyle(
-                  fontWeight:
-                      FontWeight.w700,
+                  color: textColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
 
               const SizedBox(height: 8),
 
               TextField(
-                controller:
-                    titleController,
-                textCapitalization:
-                    TextCapitalization
-                        .sentences,
-                decoration:
-                    inputDecoration(
+                controller: titleController,
+                textCapitalization: TextCapitalization.sentences,
+                style: TextStyle(color: textColor),
+                decoration: inputDecoration(
                   'Contoh: Makan siang',
-                  Icons
-                      .edit_note_rounded,
+                  Icons.edit_note_rounded,
                 ),
               ),
 
@@ -734,29 +619,26 @@ class _AddTransactionState extends State<AddTransaction> {
               // NOMINAL
               // ==================================================
 
-              const Text(
+              Text(
                 'Nominal',
                 style: TextStyle(
-                  fontWeight:
-                      FontWeight.w700,
+                  color: textColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
 
               const SizedBox(height: 8),
 
               TextField(
-                controller:
-                    amountController,
-                keyboardType:
-                    TextInputType.number,
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: textColor),
                 inputFormatters: [
                   _RupiahInputFormatter(),
                 ],
-                decoration:
-                    inputDecoration(
+                decoration: inputDecoration(
                   'Contoh: 50.000',
-                  Icons
-                      .payments_outlined,
+                  Icons.payments_outlined,
                   prefix: 'Rp ',
                 ),
               ),
@@ -767,70 +649,48 @@ class _AddTransactionState extends State<AddTransaction> {
               // TANGGAL
               // ==================================================
 
-              const Text(
+              Text(
                 'Tanggal transaksi',
                 style: TextStyle(
-                  fontWeight:
-                      FontWeight.w700,
+                  color: textColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
 
               const SizedBox(height: 8),
 
               InkWell(
-                onTap:
-                    selectTransactionDate,
-                borderRadius:
-                    BorderRadius.circular(
-                        14),
+                onTap: selectTransactionDate,
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets
-                          .symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 15,
                     vertical: 16,
                   ),
-                  decoration:
-                      BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius
-                            .circular(
-                                14),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        Icons
-                            .calendar_month_rounded,
-                        color:
-                            primaryColor,
+                        Icons.calendar_month_rounded,
+                        color: iconColor,
                       ),
-                      const SizedBox(
-                          width: 12),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          formatDate(
-                              selectedDate),
-                          style:
-                              const TextStyle(
-                            color:
-                                Color(
-                              0xFF172033,
-                            ),
-                            fontWeight:
-                                FontWeight
-                                    .w600,
+                          formatDate(selectedDate),
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       Icon(
-                        Icons
-                            .keyboard_arrow_down_rounded,
-                        color: Colors
-                            .grey
-                            .shade600,
+                        Icons.keyboard_arrow_down_rounded,
+                        color: mutedTextColor,
                       ),
                     ],
                   ),
@@ -844,110 +704,77 @@ class _AddTransactionState extends State<AddTransaction> {
               // ==================================================
 
               if (!isIncome) ...[
-                const Text(
+                Text(
                   'Kategori',
                   style: TextStyle(
-                    fontWeight:
-                        FontWeight.w700,
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
                 Container(
-                  decoration:
-                      BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius
-                            .circular(
-                      14,
-                    ),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child:
-                      DropdownButtonFormField<
-                          String>(
-                    initialValue:
-                        selectedCategory,
-                    decoration:
-                        const InputDecoration(
-                      prefixIcon:
-                          Icon(
-                        Icons
-                            .category_outlined,
-                        color:
-                            Color(
-                          0xFF172033,
-                        ),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: selectedCategory,
+                    dropdownColor: cardColor,
+                    iconEnabledColor: textColor,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.category_outlined,
+                        color: iconColor,
                       ),
-                      border:
-                          InputBorder.none,
-                      contentPadding:
-                          EdgeInsets
-                              .symmetric(
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 15,
                         vertical: 15,
                       ),
                     ),
                     items: [
-                      ...categories
-                          .map(
-                        (
-                          category,
-                        ) {
-                          return DropdownMenuItem<
-                              String>(
-                            value:
-                                category[
-                                    'name'],
+                      ...categories.map(
+                        (category) {
+                          return DropdownMenuItem<String>(
+                            value: category['name'],
                             child: Row(
                               children: [
                                 Icon(
-                                  category[
-                                      'icon'],
+                                  category['icon'],
                                   size: 19,
-                                  color:
-                                      primaryColor,
+                                  color: iconColor,
                                 ),
-                                const SizedBox(
-                                    width:
-                                        10),
+                                const SizedBox(width: 10),
                                 Text(
-                                  category[
-                                      'name'],
+                                  category['name'],
+                                  style: TextStyle(color: textColor),
                                 ),
                               ],
                             ),
                           );
                         },
                       ),
-                      const DropdownMenuItem<
-                          String>(
-                        value:
-                            '__add_category__',
+                      DropdownMenuItem<String>(
+                        value: '__add_category__',
                         child: Row(
                           children: [
                             Icon(
-                              Icons
-                                  .add_circle_outline,
-                              color:
-                                  Color(
-                                0xFF172033,
-                              ),
+                              Icons.add_circle_outline,
+                              color: iconColor,
                             ),
-                            SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             Text(
                               'Tambah Kategori',
+                              style: TextStyle(color: textColor),
                             ),
                           ],
                         ),
                       ),
                     ],
                     onChanged: (value) {
-                      if (value ==
-                          '__add_category__') {
+                      if (value == '__add_category__') {
                         showAddCategoryDialog();
                         return;
                       }
@@ -957,8 +784,7 @@ class _AddTransactionState extends State<AddTransaction> {
                       }
 
                       setState(() {
-                        selectedCategory =
-                            value;
+                        selectedCategory = value;
                       });
                     },
                   ),
@@ -966,15 +792,11 @@ class _AddTransactionState extends State<AddTransaction> {
 
                 const SizedBox(height: 8),
 
-                if (CategoryService
-                    .customCategories
-                    .isNotEmpty)
+                if (CategoryService.customCategories.isNotEmpty)
                   Text(
-                    'Tekan lama kategori custom '
-                    'untuk menghapusnya.',
+                    'Tekan lama kategori custom untuk menghapusnya.',
                     style: TextStyle(
-                      color:
-                          Colors.grey.shade600,
+                      color: mutedTextColor,
                       fontSize: 11,
                     ),
                   ),
@@ -989,35 +811,23 @@ class _AddTransactionState extends State<AddTransaction> {
               SizedBox(
                 width: double.infinity,
                 height: 54,
-                child:
-                    ElevatedButton.icon(
-                  onPressed:
-                      saveTransaction,
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        primaryColor,
-                    foregroundColor:
-                        Colors.white,
+                child: ElevatedButton.icon(
+                  onPressed: saveTransaction,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBtnColor,
+                    foregroundColor: primaryBtnTextColor,
                     elevation: 0,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius
-                              .circular(
-                        16,
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   icon: const Icon(
-                    Icons
-                        .check_rounded,
+                    Icons.check_rounded,
                   ),
                   label: const Text(
                     'Simpan Transaksi',
                     style: TextStyle(
-                      fontWeight:
-                          FontWeight.w800,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -1039,52 +849,38 @@ class _AddTransactionState extends State<AddTransaction> {
     required bool selected,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade700;
+
     return AnimatedContainer(
-      duration:
-          const Duration(
-        milliseconds: 180,
-      ),
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 14,
-      ),
-      decoration:
-          BoxDecoration(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
         color: selected
-            ? color.withValues(
-                alpha: 0.10,
-              )
-            : Colors.white,
-        borderRadius:
-            BorderRadius.circular(14),
+            ? color.withValues(alpha: isDark ? 0.20 : 0.10)
+            : cardColor,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: selected
-              ? color.withValues(
-                  alpha: 0.25,
-                )
-              : Colors.transparent,
+              ? color.withValues(alpha: isDark ? 0.50 : 0.25)
+              : (isDark ? Colors.white10 : Colors.transparent),
         ),
       ),
       child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             icon,
             size: 18,
-            color: selected
-                ? color
-                : Colors.grey,
+            color: selected ? color : mutedTextColor,
           ),
           const SizedBox(width: 7),
           Text(
             title,
             style: TextStyle(
-              color: selected
-                  ? color
-                  : Colors.grey.shade700,
-              fontWeight:
-                  FontWeight.w700,
+              color: selected ? color : mutedTextColor,
+              fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
           ),
@@ -1098,15 +894,13 @@ class _AddTransactionState extends State<AddTransaction> {
 // RUPIAH INPUT FORMATTER
 // ================================================================
 
-class _RupiahInputFormatter
-    extends TextInputFormatter {
+class _RupiahInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digits =
-        newValue.text.replaceAll(
+    final digits = newValue.text.replaceAll(
       RegExp(r'[^0-9]'),
       '',
     );
@@ -1115,25 +909,22 @@ class _RupiahInputFormatter
       return const TextEditingValue();
     }
 
-    final number =
-        int.tryParse(digits);
+    final number = int.tryParse(digits);
 
     if (number == null) {
       return oldValue;
     }
 
-    final formatted =
-        number.toString().replaceAllMapped(
-              RegExp(
-                r'\B(?=(\d{3})+(?!\d))',
-              ),
-              (match) => '.',
-            );
+    final formatted = number.toString().replaceAllMapped(
+          RegExp(
+            r'\B(?=(\d{3})+(?!\d))',
+          ),
+          (match) => '.',
+        );
 
     return TextEditingValue(
       text: formatted,
-      selection:
-          TextSelection.collapsed(
+      selection: TextSelection.collapsed(
         offset: formatted.length,
       ),
     );

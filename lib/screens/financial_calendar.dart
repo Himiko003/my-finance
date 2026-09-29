@@ -7,17 +7,13 @@ class FinancialCalendar extends StatefulWidget {
   const FinancialCalendar({super.key});
 
   @override
-  State<FinancialCalendar> createState() =>
-      _FinancialCalendarState();
+  State<FinancialCalendar> createState() => _FinancialCalendarState();
 }
 
-class _FinancialCalendarState
-    extends State<FinancialCalendar> {
+class _FinancialCalendarState extends State<FinancialCalendar> {
   DateTime selectedMonth = DateTime.now();
   DateTime selectedDate = DateTime.now();
 
-  final Color primaryColor = const Color(0xFF172033);
-  final Color backgroundColor = const Color(0xFFF4F1EA);
   final Color accentColor = const Color(0xFFE8B85C);
 
   String formatRupiah(double amount) {
@@ -58,9 +54,7 @@ class _FinancialCalendarState
     return months[month - 1];
   }
 
-  List<TransactionModel> getTransactionsForDate(
-    DateTime date,
-  ) {
+  List<TransactionModel> getTransactionsForDate(DateTime date) {
     return TransactionService.transactions
         .where(
           (transaction) =>
@@ -85,8 +79,7 @@ class _FinancialCalendarState
         .where((transaction) => transaction.isIncome)
         .fold(
           0,
-          (sum, transaction) =>
-              sum + transaction.amount,
+          (sum, transaction) => sum + transaction.amount,
         );
   }
 
@@ -95,8 +88,7 @@ class _FinancialCalendarState
         .where((transaction) => !transaction.isIncome)
         .fold(
           0,
-          (sum, transaction) =>
-              sum + transaction.amount,
+          (sum, transaction) => sum + transaction.amount,
         );
   }
 
@@ -138,9 +130,7 @@ class _FinancialCalendarState
     );
 
     final daysInMonth = lastDay.day;
-
     final firstWeekday = firstDay.weekday - 1;
-
     final List<DateTime?> days = [];
 
     for (int i = 0; i < firstWeekday; i++) {
@@ -162,29 +152,33 @@ class _FinancialCalendarState
 
   @override
   Widget build(BuildContext context) {
-    final calendarDays = generateCalendarDays();
-    final selectedTransactions =
-        getTransactionsForDate(selectedDate);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F1522) : const Color(0xFFF4F1EA);
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+    final primaryBtnColor = isDark ? accentColor : const Color(0xFF172033);
 
-    final selectedBalance =
-        selectedIncome - selectedExpense;
+    final calendarDays = generateCalendarDays();
+    final selectedTransactions = getTransactionsForDate(selectedDate);
+    final selectedBalance = selectedIncome - selectedExpense;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 20,
+        iconTheme: IconThemeData(color: textColor),
         title: Row(
           children: [
             Container(
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius:
-                    BorderRadius.circular(11),
+                color: const Color(0xFF172033),
+                borderRadius: BorderRadius.circular(11),
               ),
               child: const Icon(
                 Icons.calendar_month_rounded,
@@ -193,10 +187,10 @@ class _FinancialCalendarState
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'Keuangan',
               style: TextStyle(
-                color: Color(0xFF172033),
+                color: textColor,
                 fontWeight: FontWeight.w800,
                 fontSize: 20,
               ),
@@ -213,14 +207,13 @@ class _FinancialCalendarState
             30,
           ),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // HEADER
-              const Text(
+              Text(
                 'Catatan Harian',
                 style: TextStyle(
-                  color: Color(0xFF172033),
+                  color: textColor,
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                 ),
@@ -231,7 +224,7 @@ class _FinancialCalendarState
               Text(
                 'Pantau aktivitas keuangan berdasarkan tanggal.',
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: mutedTextColor,
                   fontSize: 13,
                 ),
               ),
@@ -240,15 +233,13 @@ class _FinancialCalendarState
 
               // MONTH SELECTOR
               Container(
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 8,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: primaryColor,
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  color: isDark ? const Color(0xFF182131) : const Color(0xFF172033),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
@@ -270,8 +261,7 @@ class _FinancialCalendarState
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
-                              fontWeight:
-                                  FontWeight.w800,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           Text(
@@ -300,20 +290,19 @@ class _FinancialCalendarState
 
               // CALENDAR
               Container(
-                padding:
-                    const EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   14,
                   18,
                   14,
                   18,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius:
-                      BorderRadius.circular(20),
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.black
-                        .withOpacity(0.04),
+                    color: isDark
+                        ? Colors.white10
+                        : Colors.black.withValues(alpha: 0.04),
                   ),
                 ),
                 child: Column(
@@ -334,49 +323,30 @@ class _FinancialCalendarState
 
                     GridView.builder(
                       shrinkWrap: true,
-                      physics:
-                          const NeverScrollableScrollPhysics(),
-                      itemCount:
-                          calendarDays.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: calendarDays.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 7,
                         mainAxisSpacing: 7,
                         crossAxisSpacing: 5,
                         childAspectRatio: 0.9,
                       ),
-                      itemBuilder:
-                          (context, index) {
-                        final date =
-                            calendarDays[index];
+                      itemBuilder: (context, index) {
+                        final date = calendarDays[index];
 
                         if (date == null) {
                           return const SizedBox();
                         }
 
-                        final isSelected =
-                            date.year ==
-                                    selectedDate
-                                        .year &&
-                                date.month ==
-                                    selectedDate
-                                        .month &&
-                                date.day ==
-                                    selectedDate.day;
+                        final isSelected = date.year == selectedDate.year &&
+                            date.month == selectedDate.month &&
+                            date.day == selectedDate.day;
 
-                        final hasData =
-                            hasTransaction(date);
+                        final hasData = hasTransaction(date);
 
-                        final isToday =
-                            date.year ==
-                                    DateTime.now()
-                                        .year &&
-                                date.month ==
-                                    DateTime.now()
-                                        .month &&
-                                date.day ==
-                                    DateTime.now()
-                                        .day;
+                        final isToday = date.year == DateTime.now().year &&
+                            date.month == DateTime.now().month &&
+                            date.day == DateTime.now().day;
 
                         return GestureDetector(
                           onTap: () {
@@ -388,38 +358,30 @@ class _FinancialCalendarState
                             duration: const Duration(
                               milliseconds: 180,
                             ),
-                            decoration:
-                                BoxDecoration(
+                            decoration: BoxDecoration(
                               color: isSelected
-                                  ? primaryColor
+                                  ? primaryBtnColor
                                   : isToday
-                                      ? const Color(
-                                          0xFFFFF3D6,
-                                        )
-                                      : Colors
-                                          .transparent,
-                              borderRadius:
-                                  BorderRadius.circular(
+                                      ? (isDark
+                                          ? const Color(0xFF202A3A)
+                                          : const Color(0xFFFFF3D6))
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
                                 12,
                               ),
                             ),
                             child: Column(
-                              mainAxisAlignment:
-                                  MainAxisAlignment
-                                      .center,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   '${date.day}',
                                   style: TextStyle(
-                                    fontWeight:
-                                        isSelected
-                                            ? FontWeight
-                                                .w800
-                                            : FontWeight
-                                                .w600,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
                                     color: isSelected
-                                        ? Colors.white
-                                        : primaryColor,
+                                        ? (isDark ? const Color(0xFF172033) : Colors.white)
+                                        : textColor,
                                   ),
                                 ),
                                 const SizedBox(
@@ -429,13 +391,11 @@ class _FinancialCalendarState
                                   Container(
                                     width: 5,
                                     height: 5,
-                                    decoration:
-                                        BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: isSelected
-                                          ? accentColor
-                                          : primaryColor,
-                                      shape:
-                                          BoxShape.circle,
+                                          ? (isDark ? const Color(0xFF172033) : accentColor)
+                                          : (isDark ? accentColor : const Color(0xFF172033)),
+                                      shape: BoxShape.circle,
                                     ),
                                   )
                                 else
@@ -456,27 +416,23 @@ class _FinancialCalendarState
 
               // SELECTED DATE
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Dipilih',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: mutedTextColor,
                           fontSize: 12,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${selectedDate.day} '
-                        '${monthName(selectedDate.month)} '
-                        '${selectedDate.year}',
+                        '${selectedDate.day} ${monthName(selectedDate.month)} ${selectedDate.year}',
                         style: TextStyle(
-                          color: primaryColor,
+                          color: textColor,
                           fontSize: 19,
                           fontWeight: FontWeight.w800,
                         ),
@@ -484,20 +440,18 @@ class _FinancialCalendarState
                     ],
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(12),
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${selectedTransactions.length} transaksi',
                       style: TextStyle(
-                        color: Colors.grey.shade700,
+                        color: mutedTextColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -514,8 +468,7 @@ class _FinancialCalendarState
                   Expanded(
                     child: _SummaryBox(
                       label: 'Masuk',
-                      amount:
-                          formatRupiah(selectedIncome),
+                      amount: formatRupiah(selectedIncome),
                       color: const Color(0xFF2E8B57),
                       icon: Icons.south_west_rounded,
                     ),
@@ -524,8 +477,7 @@ class _FinancialCalendarState
                   Expanded(
                     child: _SummaryBox(
                       label: 'Keluar',
-                      amount:
-                          formatRupiah(selectedExpense),
+                      amount: formatRupiah(selectedExpense),
                       color: const Color(0xFFD35B5B),
                       icon: Icons.north_east_rounded,
                     ),
@@ -534,9 +486,10 @@ class _FinancialCalendarState
                   Expanded(
                     child: _SummaryBox(
                       label: 'Selisih',
-                      amount:
-                          formatRupiah(selectedBalance),
-                      color: primaryColor,
+                      amount: formatRupiah(selectedBalance),
+                      color: isDark
+                          ? (selectedBalance >= 0 ? const Color(0xFF72C497) : const Color(0xFFE98585))
+                          : (selectedBalance >= 0 ? const Color(0xFF2E8B57) : const Color(0xFFD35B5B)),
                       icon: Icons.swap_vert_rounded,
                     ),
                   ),
@@ -549,15 +502,13 @@ class _FinancialCalendarState
               if (selectedTransactions.isEmpty)
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: 35,
                     horizontal: 20,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
                     children: [
@@ -565,19 +516,20 @@ class _FinancialCalendarState
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: backgroundColor,
+                          color: isDark ? const Color(0xFF202A3A) : const Color(0xFFF4F1EA),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.receipt_long_rounded,
-                          color: Colors.grey.shade500,
+                          color: mutedTextColor,
                           size: 28,
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text(
+                      Text(
                         'Belum ada catatan',
                         style: TextStyle(
+                          color: textColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -587,7 +539,7 @@ class _FinancialCalendarState
                         'Tidak ada transaksi pada tanggal ini.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: mutedTextColor,
                           fontSize: 12,
                         ),
                       ),
@@ -618,12 +570,15 @@ class _DayTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade500;
+
     return Expanded(
       child: Center(
         child: Text(
           title,
           style: TextStyle(
-            color: Colors.grey.shade500,
+            color: mutedTextColor,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -648,16 +603,18 @@ class _SummaryBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(16),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -670,7 +627,7 @@ class _SummaryBox extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: mutedTextColor,
                   fontSize: 11,
                 ),
               ),
@@ -703,20 +660,21 @@ class _TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = transaction.isIncome;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
 
-    final color = isIncome
-        ? const Color(0xFF2E8B57)
-        : const Color(0xFFD35B5B);
+    final isIncome = transaction.isIncome;
+    final color = isIncome ? const Color(0xFF2E8B57) : const Color(0xFFD35B5B);
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
@@ -724,29 +682,24 @@ class _TransactionCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.09),
-              borderRadius:
-                  BorderRadius.circular(13),
+              color: color.withValues(alpha: isDark ? 0.20 : 0.09),
+              borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(
-              isIncome
-                  ? Icons.south_west_rounded
-                  : Icons.north_east_rounded,
+              isIncome ? Icons.south_west_rounded : Icons.north_east_rounded,
               color: color,
               size: 21,
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   transaction.title,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: textColor,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -755,17 +708,15 @@ class _TransactionCard extends StatelessWidget {
                 Text(
                   transaction.category,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: mutedTextColor,
                     fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
-
           Text(
-            '${isIncome ? '+' : '-'} '
-            '${formatRupiah(transaction.amount)}',
+            '${isIncome ? '+' : '-'} ${formatRupiah(transaction.amount)}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w800,

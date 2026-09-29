@@ -12,8 +12,6 @@ class Statistics extends StatefulWidget {
 }
 
 class _StatisticsState extends State<Statistics> {
-  final Color primaryColor = const Color(0xFF172033);
-  final Color backgroundColor = const Color(0xFFF4F1EA);
   final Color accentColor = const Color(0xFFE8B85C);
 
   // ============================================================
@@ -151,8 +149,7 @@ class _StatisticsState extends State<Statistics> {
     for (final transaction in currentMonthTransactions) {
       if (!transaction.isIncome) {
         result[transaction.category] =
-            (result[transaction.category] ?? 0) +
-                transaction.amount;
+            (result[transaction.category] ?? 0) + transaction.amount;
       }
     }
 
@@ -235,8 +232,7 @@ class _StatisticsState extends State<Statistics> {
   IconData getCategoryIcon(String categoryName) {
     for (final category in CategoryService.categories) {
       if (category['name'] == categoryName) {
-        return category['icon'] as IconData? ??
-            Icons.category_outlined;
+        return category['icon'] as IconData? ?? Icons.category_outlined;
       }
     }
 
@@ -249,29 +245,35 @@ class _StatisticsState extends State<Statistics> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F1522) : const Color(0xFFF4F1EA);
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     final categories = sortedCategories;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: bgColor,
 
       // ========================================================
       // APP BAR
       // ========================================================
 
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 20,
-        title: const Text(
+        title: Text(
           'Statistik',
           style: TextStyle(
-            color: Color(0xFF172033),
+            color: textColor,
             fontWeight: FontWeight.w800,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Color(0xFF172033),
+        iconTheme: IconThemeData(
+          color: textColor,
         ),
       ),
 
@@ -285,8 +287,7 @@ class _StatisticsState extends State<Statistics> {
             setState(() {});
           },
           child: SingleChildScrollView(
-            physics:
-                const AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(
               20,
               8,
@@ -294,18 +295,16 @@ class _StatisticsState extends State<Statistics> {
               30,
             ),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 // ==================================================
                 // HEADER
                 // ==================================================
 
                 Text(
                   'Ringkasan ${getMonthName()}',
-                  style: const TextStyle(
-                    color: Color(0xFF172033),
+                  style: TextStyle(
+                    color: textColor,
                     fontSize: 25,
                     fontWeight: FontWeight.w800,
                   ),
@@ -316,7 +315,7 @@ class _StatisticsState extends State<Statistics> {
                 Text(
                   'Lihat kondisi keuanganmu bulan ini.',
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: mutedTextColor,
                     fontSize: 13,
                   ),
                 ),
@@ -329,25 +328,20 @@ class _StatisticsState extends State<Statistics> {
 
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius:
-                        BorderRadius.circular(22),
+                    color: isDark ? const Color(0xFF182131) : const Color(0xFF172033),
+                    borderRadius: BorderRadius.circular(22),
                   ),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       const Text(
                         'CASH FLOW',
                         style: TextStyle(
                           color: Colors.white54,
                           fontSize: 11,
-                          fontWeight:
-                              FontWeight.w700,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -358,15 +352,10 @@ class _StatisticsState extends State<Statistics> {
                         formatRupiah(cashFlow),
                         style: TextStyle(
                           color: cashFlow >= 0
-                              ? const Color(
-                                  0xFF72C497,
-                                )
-                              : const Color(
-                                  0xFFE98585,
-                                ),
+                              ? const Color(0xFF72C497)
+                              : const Color(0xFFE98585),
                           fontSize: 28,
-                          fontWeight:
-                              FontWeight.w800,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
 
@@ -393,46 +382,23 @@ class _StatisticsState extends State<Statistics> {
 
                 Row(
                   children: [
-
                     Expanded(
                       child: _StatCard(
                         title: 'Pemasukan',
-                        value:
-                            formatRupiah(
-                          totalIncome,
-                        ),
-                        icon:
-                            Icons.south_west_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF2E8B57,
-                        ),
-                        background:
-                            const Color(
-                          0xFFE6F4EC,
-                        ),
+                        value: formatRupiah(totalIncome),
+                        icon: Icons.south_west_rounded,
+                        iconColor: const Color(0xFF2E8B57),
+                        background: const Color(0xFF2E8B57).withValues(alpha: isDark ? 0.20 : 0.12),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     Expanded(
                       child: _StatCard(
                         title: 'Pengeluaran',
-                        value:
-                            formatRupiah(
-                          totalExpense,
-                        ),
-                        icon:
-                            Icons.north_east_rounded,
-                        iconColor:
-                            const Color(
-                          0xFFD35B5B,
-                        ),
-                        background:
-                            const Color(
-                          0xFFFBE9E9,
-                        ),
+                        value: formatRupiah(totalExpense),
+                        icon: Icons.north_east_rounded,
+                        iconColor: const Color(0xFFD35B5B),
+                        background: const Color(0xFFD35B5B).withValues(alpha: isDark ? 0.20 : 0.12),
                       ),
                     ),
                   ],
@@ -446,43 +412,24 @@ class _StatisticsState extends State<Statistics> {
 
                 Row(
                   children: [
-
                     Expanded(
                       child: _StatCard(
                         title: 'Transaksi',
-                        value:
-                            '$transactionCount transaksi',
-                        icon:
-                            Icons.receipt_long_outlined,
-                        iconColor:
-                            primaryColor,
-                        background:
-                            const Color(
-                          0xFFE9ECF2,
-                        ),
+                        value: '$transactionCount transaksi',
+                        icon: Icons.receipt_long_outlined,
+                        iconColor: isDark ? accentColor : const Color(0xFF172033),
+                        background: (isDark ? accentColor : const Color(0xFF172033))
+                            .withValues(alpha: isDark ? 0.20 : 0.10),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     Expanded(
                       child: _StatCard(
-                        title:
-                            'Rata-rata Pengeluaran',
-                        value:
-                            formatRupiah(
-                          averageExpense,
-                        ),
-                        icon:
-                            Icons.analytics_outlined,
-                        iconColor:
-                            const Color(
-                          0xFFB17A2B,
-                        ),
-                        background:
-                            const Color(
-                          0xFFFFF3D6,
-                        ),
+                        title: 'Rata-rata Pengeluaran',
+                        value: formatRupiah(averageExpense),
+                        icon: Icons.analytics_outlined,
+                        iconColor: const Color(0xFFB17A2B),
+                        background: const Color(0xFFB17A2B).withValues(alpha: isDark ? 0.20 : 0.15),
                       ),
                     ),
                   ],
@@ -494,10 +441,10 @@ class _StatisticsState extends State<Statistics> {
                 // HIGHEST CATEGORY
                 // ==================================================
 
-                const Text(
+                Text(
                   'Kategori Terbesar',
                   style: TextStyle(
-                    color: Color(0xFF172033),
+                    color: textColor,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
@@ -507,29 +454,19 @@ class _StatisticsState extends State<Statistics> {
 
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-
                       Container(
                         width: 48,
                         height: 48,
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              const Color(
-                            0xFFFFF3D6,
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(
-                            14,
-                          ),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: isDark ? 0.25 : 0.20),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
                           Icons.trending_up_rounded,
@@ -542,32 +479,22 @@ class _StatisticsState extends State<Statistics> {
 
                       Expanded(
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            const Text(
+                            Text(
                               'Pengeluaran terbesar',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: mutedTextColor,
                                 fontSize: 11,
                               ),
                             ),
-
                             const SizedBox(height: 3),
-
                             Text(
                               highestCategory,
-                              style:
-                                  const TextStyle(
-                                color:
-                                    Color(
-                                  0xFF172033,
-                                ),
+                              style: TextStyle(
+                                color: textColor,
                                 fontSize: 16,
-                                fontWeight:
-                                    FontWeight.w800,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ],
@@ -575,16 +502,11 @@ class _StatisticsState extends State<Statistics> {
                       ),
 
                       Text(
-                        formatRupiah(
-                          highestCategoryAmount,
-                        ),
-                        style:
-                            const TextStyle(
-                          color:
-                              Color(0xFFD35B5B),
+                        formatRupiah(highestCategoryAmount),
+                        style: const TextStyle(
+                          color: Color(0xFFD35B5B),
                           fontSize: 13,
-                          fontWeight:
-                              FontWeight.w800,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ],
@@ -598,25 +520,20 @@ class _StatisticsState extends State<Statistics> {
                 // ==================================================
 
                 Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-
-                    const Text(
+                    Text(
                       'Pengeluaran per Kategori',
                       style: TextStyle(
-                        color: Color(0xFF172033),
+                        color: textColor,
                         fontSize: 18,
-                        fontWeight:
-                            FontWeight.w800,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-
                     Text(
                       '${categories.length} kategori',
                       style: TextStyle(
-                        color:
-                            Colors.grey.shade600,
+                        color: mutedTextColor,
                         fontSize: 11,
                       ),
                     ),
@@ -632,48 +549,32 @@ class _StatisticsState extends State<Statistics> {
                 if (categories.isEmpty)
                   Container(
                     width: double.infinity,
-                    padding:
-                        const EdgeInsets.symmetric(
-                      vertical: 35,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(
-                        20,
-                      ),
+                    padding: const EdgeInsets.symmetric(vertical: 35),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       children: [
-
                         Icon(
-                          Icons
-                              .bar_chart_rounded,
+                          Icons.bar_chart_rounded,
                           size: 42,
-                          color:
-                              Colors.grey.shade400,
+                          color: mutedTextColor,
                         ),
-
                         const SizedBox(height: 10),
-
-                        const Text(
+                        Text(
                           'Belum ada pengeluaran',
                           style: TextStyle(
-                            fontWeight:
-                                FontWeight.w700,
+                            color: textColor,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-
                         const SizedBox(height: 4),
-
                         Text(
                           'Data kategori akan muncul setelah kamu mencatat pengeluaran.',
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color:
-                                Colors.grey.shade600,
+                            color: mutedTextColor,
                             fontSize: 11,
                           ),
                         ),
@@ -688,93 +589,55 @@ class _StatisticsState extends State<Statistics> {
                 else
                   Container(
                     width: double.infinity,
-                    padding:
-                        const EdgeInsets.all(18),
-                    decoration:
-                        BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(
-                        20,
-                      ),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       children: [
-
                         // TOTAL
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-
                             Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment
-                                      .start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Total pengeluaran',
                                   style: TextStyle(
-                                    color: Colors
-                                        .grey
-                                        .shade600,
+                                    color: mutedTextColor,
                                     fontSize: 10,
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 3,
-                                ),
+                                const SizedBox(height: 3),
                                 Text(
-                                  formatRupiah(
-                                    totalExpense,
-                                  ),
-                                  style:
-                                      const TextStyle(
-                                    color:
-                                        Color(
-                                      0xFF172033,
-                                    ),
+                                  formatRupiah(totalExpense),
+                                  style: TextStyle(
+                                    color: textColor,
                                     fontSize: 17,
-                                    fontWeight:
-                                        FontWeight
-                                            .w800,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ],
                             ),
-
                             Container(
-                              padding:
-                                  const EdgeInsets
-                                      .symmetric(
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 6,
                               ),
-                              decoration:
-                                  BoxDecoration(
-                                color:
-                                    const Color(
-                                  0xFFE9ECF2,
-                                ),
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                  10,
-                                ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF202A3A)
+                                    : const Color(0xFFE9ECF2),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 '${categories.length} kategori',
-                                style:
-                                    const TextStyle(
-                                  color:
-                                      Color(
-                                    0xFF172033,
-                                  ),
+                                style: TextStyle(
+                                  color: textColor,
                                   fontSize: 10,
-                                  fontWeight:
-                                      FontWeight
-                                          .w700,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -784,42 +647,22 @@ class _StatisticsState extends State<Statistics> {
                         const SizedBox(height: 22),
 
                         // BAR LIST
-                        ...categories
-                            .asMap()
-                            .entries
-                            .map(
+                        ...categories.asMap().entries.map(
                           (item) {
-                            final index =
-                                item.key;
-                            final entry =
-                                item.value;
+                            final index = item.key;
+                            final entry = item.value;
 
-                            final percentage =
-                                getCategoryPercentage(
-                              entry.value,
-                            );
-
-                            final icon =
-                                getCategoryIcon(
-                              entry.key,
-                            );
-
-                            final color =
-                                getCategoryColor(
-                              index,
-                            );
+                            final percentage = getCategoryPercentage(entry.value);
+                            final icon = getCategoryIcon(entry.key);
+                            final color = getCategoryColor(index);
 
                             return _CategoryBar(
-                              category:
-                                  entry.key,
-                              amount:
-                                  entry.value,
-                              percentage:
-                                  percentage,
+                              category: entry.key,
+                              amount: entry.value,
+                              percentage: percentage,
                               icon: icon,
                               color: color,
-                              formatRupiah:
-                                  formatRupiah,
+                              formatRupiah: formatRupiah,
                             );
                           },
                         ),
@@ -835,36 +678,25 @@ class _StatisticsState extends State<Statistics> {
 
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color:
-                        const Color(0xFFE9ECF2),
-                    borderRadius:
-                        BorderRadius.circular(
-                      18,
-                    ),
+                    color: isDark ? const Color(0xFF182131) : const Color(0xFFE9ECF2),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
-                      const Icon(
+                      Icon(
                         Icons.info_outline_rounded,
-                        color:
-                            Color(0xFF172033),
+                        color: isDark ? accentColor : const Color(0xFF172033),
                         size: 20,
                       ),
-
                       const SizedBox(width: 10),
-
                       Expanded(
                         child: Text(
                           'Statistik di atas hanya menghitung transaksi pada bulan ${getMonthName()} tahun ini.',
                           style: TextStyle(
-                            color:
-                                Colors.grey.shade700,
+                            color: mutedTextColor,
                             fontSize: 11,
                             height: 1.4,
                           ),
@@ -905,34 +737,23 @@ class _CategoryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     return Padding(
-      padding:
-          const EdgeInsets.only(bottom: 19),
+      padding: const EdgeInsets.only(bottom: 19),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          // ======================================================
-          // NAMA + NOMINAL
-          // ======================================================
-
           Row(
             children: [
-
               Container(
                 width: 36,
                 height: 36,
-                decoration:
-                    BoxDecoration(
-                  color:
-                      color.withValues(
-                    alpha: 0.10,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: isDark ? 0.20 : 0.10),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   icon,
@@ -940,34 +761,26 @@ class _CategoryBar extends StatelessWidget {
                   size: 18,
                 ),
               ),
-
               const SizedBox(width: 10),
-
               Expanded(
                 child: Text(
                   category,
                   maxLines: 1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color:
-                        Color(0xFF172033),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textColor,
                     fontSize: 12,
-                    fontWeight:
-                        FontWeight.w700,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-
               const SizedBox(width: 10),
-
               Text(
                 formatRupiah(amount),
                 style: TextStyle(
                   color: color,
                   fontSize: 11,
-                  fontWeight:
-                      FontWeight.w800,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -975,46 +788,29 @@ class _CategoryBar extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // ======================================================
-          // BAR
-          // ======================================================
-
           Row(
             children: [
-
               Expanded(
                 child: ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
-                  child:
-                      LinearProgressIndicator(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
                     value: percentage,
                     minHeight: 9,
-                    backgroundColor:
-                        const Color(
-                      0xFFEDEDED,
-                    ),
+                    backgroundColor: isDark ? const Color(0xFF202A3A) : const Color(0xFFEDEDED),
                     color: color,
                   ),
                 ),
               ),
-
               const SizedBox(width: 10),
-
               SizedBox(
                 width: 38,
                 child: Text(
                   '${(percentage * 100).toInt()}%',
-                  textAlign:
-                      TextAlign.right,
+                  textAlign: TextAlign.right,
                   style: TextStyle(
-                    color:
-                        Colors.grey.shade600,
+                    color: mutedTextColor,
                     fontSize: 10,
-                    fontWeight:
-                        FontWeight.w700,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -1047,27 +843,26 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+
     return Container(
-      padding:
-          const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Container(
             width: 38,
             height: 38,
-            decoration:
-                BoxDecoration(
+            decoration: BoxDecoration(
               color: background,
-              borderRadius:
-                  BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(
               icon,
@@ -1075,33 +870,24 @@ class _StatCard extends StatelessWidget {
               size: 19,
             ),
           ),
-
           const SizedBox(height: 12),
-
           Text(
             title,
             style: TextStyle(
-              color:
-                  Colors.grey.shade600,
+              color: mutedTextColor,
               fontSize: 10,
-              fontWeight:
-                  FontWeight.w600,
+              fontWeight: FontWeight.w600,
             ),
           ),
-
           const SizedBox(height: 4),
-
           Text(
             value,
             maxLines: 1,
-            overflow:
-                TextOverflow.ellipsis,
-            style: const TextStyle(
-              color:
-                  Color(0xFF172033),
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: textColor,
               fontSize: 14,
-              fontWeight:
-                  FontWeight.w800,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

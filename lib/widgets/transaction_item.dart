@@ -18,24 +18,26 @@ class TransactionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF182131) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF172033);
+    final mutedTextColor = isDark ? const Color(0xFFADB5C4) : Colors.grey.shade600;
+    final color = isIncome ? const Color(0xFF2E8B57) : const Color(0xFFD35B5B);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: isIncome
-                ? Colors.green.shade50
-                : Colors.red.shade50,
+            backgroundColor: color.withValues(alpha: isDark ? 0.20 : 0.10),
             child: Icon(
               icon,
-              color: isIncome
-                  ? Colors.green
-                  : Colors.red,
+              color: color,
             ),
           ),
 
@@ -47,8 +49,9 @@ class TransactionItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
                 ),
 
@@ -57,7 +60,7 @@ class TransactionItem extends StatelessWidget {
                 Text(
                   category,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: mutedTextColor,
                     fontSize: 12,
                   ),
                 ),
@@ -69,9 +72,7 @@ class TransactionItem extends StatelessWidget {
             amount,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isIncome
-                  ? Colors.green
-                  : Colors.red,
+              color: color,
             ),
           ),
         ],
