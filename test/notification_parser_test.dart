@@ -326,5 +326,64 @@ void main() {
       expect(promo, isNull);
       expect(failed, isNull);
     });
+
+    test('Parse Bank Jago real-device incoming ("telah mengirim ... ke kamu") as Transfer Masuk', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Jago',
+        text: 'BUDI UTOMO telah mengirim Rp50.000 ke kamu.',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.source, 'Bank Jago');
+      expect(parsed.isIncome, isTrue);
+      expect(parsed.title, 'Transfer Masuk');
+      expect(parsed.amount, 50000.0);
+    });
+
+    test('Parse incoming context ("mengirim uang kepada kamu" & "transfer ke rekening kamu") as Transfer Masuk', () {
+      final p1 = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Bank Jago',
+        text: 'ANDI mengirim uang kepada kamu sebesar Rp 125.000',
+      );
+      final p2 = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Bank Jago',
+        text: 'Transfer ke rekening kamu Rp 300.000 berhasil',
+      );
+
+      expect(p1, isNotNull);
+      expect(p1!.isIncome, isTrue);
+      expect(p1.title, 'Transfer Masuk');
+      expect(p1.amount, 125000.0);
+
+      expect(p2, isNotNull);
+      expect(p2!.isIncome, isTrue);
+      expect(p2.title, 'Transfer Masuk');
+      expect(p2.amount, 300000.0);
+    });
+
+    test('Parse outgoing ("Kamu telah melakukan transfer ke ..." & "Kamu mengirim ...") as Transfer Keluar', () {
+      final p1 = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Jago',
+        text: 'Kamu telah melakukan transfer ke SITI sebesar Rp 80.000',
+      );
+      final p2 = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Bank Jago',
+        text: 'Kamu mengirim Rp 100.000 ke REZA',
+      );
+
+      expect(p1, isNotNull);
+      expect(p1!.isIncome, isFalse);
+      expect(p1.title, 'Transfer Keluar');
+      expect(p1.amount, 80000.0);
+
+      expect(p2, isNotNull);
+      expect(p2!.isIncome, isFalse);
+      expect(p2.title, 'Transfer Keluar');
+      expect(p2.amount, 100000.0);
+    });
   });
 }

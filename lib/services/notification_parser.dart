@@ -342,7 +342,28 @@ class NotificationParser {
   static bool detectIsIncome(String text) {
     final lower = text.toLowerCase();
 
-    // Specific strong income phrases
+    // 1. Explicit outgoing subject context (e.g. "Kamu telah melakukan transfer ke ...", "Kamu mengirim ... ke ...")
+    final outgoingSubjectPatterns = [
+      RegExp(r'\b(?:kamu|anda)\s+(?:telah\s+)?(?:melakukan\s+transfer|mengirim|kirim|transfer)\b'),
+    ];
+    for (final pattern in outgoingSubjectPatterns) {
+      if (pattern.hasMatch(lower)) {
+        return false;
+      }
+    }
+
+    // 2. Context-aware incoming patterns (e.g. "telah mengirim Rp50.000 ke kamu", "transfer ke rekening kamu")
+    final incomingContextPatterns = [
+      RegExp(r'\b(?:telah\s+)?mengirim(?:\s+uang|\s+dana)?\b.*\b(?:ke|kepada)\s+(?:rekening\s+|kantong\s+|akun\s+)?(?:kamu|anda)\b'),
+      RegExp(r'\btransfer\b.*\b(?:ke|kepada)\s+(?:rekening\s+|kantong\s+|akun\s+)?(?:kamu|anda)\b'),
+    ];
+    for (final pattern in incomingContextPatterns) {
+      if (pattern.hasMatch(lower)) {
+        return true;
+      }
+    }
+
+    // 3. Specific strong income phrases
     final strongIncomePhrases = [
       'transfer masuk',
       'dana masuk',
@@ -579,8 +600,16 @@ class NotificationParser {
     if (lower.contains('qris')) {
       return 'Pembayaran QRIS';
     }
-    if (lower.contains('transfer masuk') || lower.contains('uang masuk')) {
-      return 'Transfer Masuk';
+    if (isIncome) {
+      if (lower.contains('top up')) {
+        return 'Top Up Masuk';
+      }
+      if (lower.contains('transfer') ||
+          lower.contains('uang masuk') ||
+          lower.contains('mengirim')) {
+        return 'Transfer Masuk';
+      }
+      return 'Pemasukan $source';
     }
     if (lower.contains('transfer ke') ||
         lower.contains('transfer keluar') ||
@@ -593,10 +622,10 @@ class NotificationParser {
       return 'Pembayaran';
     }
     if (lower.contains('top up')) {
-      return isIncome ? 'Top Up Masuk' : 'Top Up';
+      return 'Top Up';
     }
 
-    return isIncome ? 'Pemasukan $source' : 'Pengeluaran $source';
+    return 'Pengeluaran $source';
   }
 
   /// Generates a deterministic fingerprint to prevent duplicate processing
