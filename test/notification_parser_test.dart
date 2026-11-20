@@ -99,10 +99,12 @@ void main() {
       expect(NotificationParser.detectSource(packageName: 'com.bca', title: '', text: ''), 'BCA');
       expect(NotificationParser.detectSource(packageName: 'com.bri.bmo', title: '', text: ''), 'BRI');
       expect(NotificationParser.detectSource(packageName: 'id.bmri.livin', title: '', text: ''), 'Mandiri');
+      expect(NotificationParser.detectSource(packageName: 'id.co.bni.newmbanking', title: '', text: ''), 'BNI');
       expect(NotificationParser.detectSource(packageName: 'id.dana', title: '', text: ''), 'DANA');
       expect(NotificationParser.detectSource(packageName: 'com.gojek.app', title: '', text: ''), 'GoPay');
       expect(NotificationParser.detectSource(packageName: 'ovo.id', title: '', text: ''), 'OVO');
       expect(NotificationParser.detectSource(packageName: 'com.shopee.id', title: '', text: ''), 'ShopeePay');
+      expect(NotificationParser.supportedSources, contains('BNI'));
     });
 
     test('Detect category Makanan', () {
@@ -185,6 +187,79 @@ void main() {
       );
 
       expect(fp1, isNot(equals(fp2)));
+    });
+  });
+
+  group('NotificationParser - Filter Non-Transaksi & Variasi Format', () {
+    test('Ignore OTP notification even if it contains numbers', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.bca',
+        title: 'BCA Mobile',
+        text: 'Kode OTP transaksi sebesar Rp 50.000 adalah 123456. Jangan bagikan kode ini.',
+      );
+      expect(parsed, isNull);
+    });
+
+    test('Ignore failed transaction notification', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'id.bmri.livin',
+        title: 'Livin Mandiri',
+        text: 'Transaksi gagal: pembayaran QRIS Rp 25.000 tidak berhasil diproses.',
+      );
+      expect(parsed, isNull);
+    });
+
+    test('Ignore cancelled / expired notification', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'id.dana',
+        title: 'DANA',
+        text: 'Pembayaran tagihan Rp 120.000 dibatalkan karena kedaluwarsa.',
+      );
+      expect(parsed, isNull);
+    });
+
+    test('Ignore marketing promo notification without completed mutation', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.gojek.app',
+        title: 'GoPay Promo',
+        text: 'Promo spesial! Dapatkan cashback hingga Rp 50.000 dengan kode promo GOPAY50.',
+      );
+      expect(parsed, isNull);
+    });
+
+    test('Valid cashback transaction with Promo in title is still parsed', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'id.dana',
+        title: 'DANA Promo',
+        text: 'Cashback Rp 5.000 telah ditambahkan ke saldo Anda',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.isIncome, isTrue);
+      expect(parsed.amount, 5000.0);
+    });
+
+    test('Parse valid BNI refund / incoming transfer & amount followed by comma', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'id.co.bni.newmbanking',
+        title: 'BNI Mobile Banking',
+        text: 'Pengembalian dana Rp 150.000, terima kasih.',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.source, 'BNI');
+      expect(parsed.isIncome, isTrue);
+      expect(parsed.amount, 150000.0);
+    });
+
+    test('Parse valid expense with auto debit keyword', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.bca',
+        title: 'BCA',
+        text: 'Auto debit Rp 200.000 untuk tagihan internet berhasil.',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.isIncome, isFalse);
+      expect(parsed.amount, 200000.0);
+      expect(parsed.category, 'Tagihan');
     });
   });
 }

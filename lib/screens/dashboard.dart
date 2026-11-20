@@ -38,12 +38,20 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    NotificationService.transactionUpdateNotifier.addListener(_onTransactionUpdated);
   }
 
   @override
   void dispose() {
+    NotificationService.transactionUpdateNotifier.removeListener(_onTransactionUpdated);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _onTransactionUpdated() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override

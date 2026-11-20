@@ -1,13 +1,11 @@
 package com.example.test_flutter
 
-import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import org.json.JSONArray
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.myfinance.app/notification_listener"
@@ -33,11 +31,25 @@ class MainActivity : FlutterActivity() {
                     }
                 }
                 "getUnprocessedNotifications" -> {
-                    val list = getAndClearUnprocessedNotifications()
+                    val list = MyFinanceNotificationListener.drainQueue(this)
                     result.success(list)
                 }
+                "acknowledgeNotification" -> {
+                    val pkg = call.argument<String>("packageName") ?: ""
+                    val title = call.argument<String>("title") ?: ""
+                    val text = call.argument<String>("text") ?: ""
+                    val timestamp = call.argument<Number>("timestamp")?.toLong() ?: 0L
+                    MyFinanceNotificationListener.acknowledgeNotification(
+                        this,
+                        pkg,
+                        title,
+                        text,
+                        timestamp
+                    )
+                    result.success(true)
+                }
                 "clearNotificationQueue" -> {
-                    clearQueue()
+                    MyFinanceNotificationListener.clearQueue(this)
                     result.success(true)
                 }
                 else -> {
@@ -45,13 +57,21 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+    }
 
-        // Forward notifications in real-time when activity is running
+    override fun onResume() {
+        super.onResume()
+        // Forward notifications in real-time only when activity is in foreground
         MyFinanceNotificationListener.activeListener = { dataMap ->
             runOnUiThread {
                 methodChannel?.invokeMethod("onNotificationReceived", dataMap)
             }
         }
+    }
+
+    override fun onPause() {
+        MyFinanceNotificationListener.activeListener = null
+        super.onPause()
     }
 
     override fun onDestroy() {
@@ -71,41 +91,5 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             false
         }
-    }
-
-    private fun getAndClearUnprocessedNotifications(): List<Map<String, Any>> {
-        val prefs = getSharedPreferences(
-            MyFinanceNotificationListener.PREFS_NAME,
-            Context.MODE_PRIVATE
-        )
-        val json = prefs.getString(MyFinanceNotificationListener.KEY_QUEUE, "[]") ?: "[]"
-        val resultList = mutableListOf<Map<String, Any>>()
-
-        try {
-            val array = JSONArray(json)
-            for (i in 0 until array.length()) {
-                val obj = array.optJSONObject(i) ?: continue
-                val map = mutableMapOf<String, Any>()
-                map["packageName"] = obj.optString("packageName")
-                map["title"] = obj.optString("title")
-                map["text"] = obj.optString("text")
-                map["timestamp"] = obj.optLong("timestamp")
-                resultList.add(map)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        // Clear queue after retrieval
-        prefs.edit().remove(MyFinanceNotificationListener.KEY_QUEUE).apply()
-        return resultList
-    }
-
-    private fun clearQueue() {
-        val prefs = getSharedPreferences(
-            MyFinanceNotificationListener.PREFS_NAME,
-            Context.MODE_PRIVATE
-        )
-        prefs.edit().remove(MyFinanceNotificationListener.KEY_QUEUE).apply()
     }
 }

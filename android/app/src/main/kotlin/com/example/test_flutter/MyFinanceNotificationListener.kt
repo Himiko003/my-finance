@@ -13,6 +13,9 @@ class MyFinanceNotificationListener : NotificationListenerService() {
         const val PREFS_NAME = "MyFinanceNotificationPrefs"
         const val KEY_QUEUE = "raw_notifications_queue"
 
+        // Shared lock between NotificationListenerService and MainActivity
+        private val queueLock = Any()
+
         // Static callback to communicate directly with MainActivity if active
         var activeListener: ((Map<String, Any>) -> Unit)? = null
 
@@ -30,6 +33,120 @@ class MyFinanceNotificationListener : NotificationListenerService() {
             "ovo.id",
             "com.shopee.id"
         )
+
+        fun enqueueNotification(context: Context, item: Map<String, Any>) {
+            synchronized(queueLock) {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val existingJson = prefs.getString(KEY_QUEUE, "[]") ?: "[]"
+                val array = try {
+                    JSONArray(existingJson)
+                } catch (e: Exception) {
+                    JSONArray()
+                }
+
+                val itemPkg = item["packageName"] as? String ?: ""
+                val itemTitle = item["title"] as? String ?: ""
+                val itemText = item["text"] as? String ?: ""
+                val itemTime = (item["timestamp"] as? Number)?.toLong() ?: 0L
+
+                for (i in 0 until array.length()) {
+                    val obj = array.optJSONObject(i) ?: continue
+                    if (obj.optString("packageName") == itemPkg &&
+                        obj.optString("title") == itemTitle &&
+                        obj.optString("text") == itemText &&
+                        Math.abs(obj.optLong("timestamp") - itemTime) < 5000
+                    ) {
+                        // Duplicate notification within 5 seconds, ignore
+                        return
+                    }
+                }
+
+                val newObj = JSONObject().apply {
+                    put("packageName", itemPkg)
+                    put("title", itemTitle)
+                    put("text", itemText)
+                    put("timestamp", itemTime)
+                }
+
+                array.put(newObj)
+                prefs.edit().putString(KEY_QUEUE, array.toString()).apply()
+            }
+        }
+
+        fun drainQueue(context: Context): List<Map<String, Any>> {
+            synchronized(queueLock) {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val json = prefs.getString(KEY_QUEUE, "[]") ?: "[]"
+                val resultList = mutableListOf<Map<String, Any>>()
+
+                try {
+                    val array = JSONArray(json)
+                    for (i in 0 until array.length()) {
+                        val obj = array.optJSONObject(i) ?: continue
+                        val map = mutableMapOf<String, Any>()
+                        map["packageName"] = obj.optString("packageName")
+                        map["title"] = obj.optString("title")
+                        map["text"] = obj.optString("text")
+                        map["timestamp"] = obj.optLong("timestamp")
+                        resultList.add(map)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                prefs.edit().remove(KEY_QUEUE).apply()
+                return resultList
+            }
+        }
+
+        fun acknowledgeNotification(
+            context: Context,
+            packageName: String,
+            title: String,
+            text: String,
+            timestamp: Long
+        ) {
+            synchronized(queueLock) {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val json = prefs.getString(KEY_QUEUE, "[]") ?: "[]"
+                val array = try {
+                    JSONArray(json)
+                } catch (e: Exception) {
+                    return
+                }
+
+                val remaining = JSONArray()
+                var removed = false
+                for (i in 0 until array.length()) {
+                    val obj = array.optJSONObject(i) ?: continue
+                    if (!removed &&
+                        obj.optString("packageName") == packageName &&
+                        obj.optString("title") == title &&
+                        obj.optString("text") == text &&
+                        obj.optLong("timestamp") == timestamp
+                    ) {
+                        removed = true
+                        continue
+                    }
+                    remaining.put(obj)
+                }
+
+                if (removed) {
+                    if (remaining.length() == 0) {
+                        prefs.edit().remove(KEY_QUEUE).apply()
+                    } else {
+                        prefs.edit().putString(KEY_QUEUE, remaining.toString()).apply()
+                    }
+                }
+            }
+        }
+
+        fun clearQueue(context: Context) {
+            synchronized(queueLock) {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                prefs.edit().remove(KEY_QUEUE).apply()
+            }
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -76,52 +193,12 @@ class MyFinanceNotificationListener : NotificationListenerService() {
             )
 
             // Save to persistent SharedPreferences queue so it is NEVER lost even if app is closed
-            saveToQueue(dataMap)
+            enqueueNotification(this, dataMap)
 
-            // If Flutter is active, also dispatch in real-time
+            // If Flutter is active in foreground, also dispatch in real-time
             activeListener?.invoke(dataMap)
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-    private fun saveToQueue(item: Map<String, Any>) {
-        synchronized(this) {
-            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val existingJson = prefs.getString(KEY_QUEUE, "[]") ?: "[]"
-            val array = try {
-                JSONArray(existingJson)
-            } catch (e: Exception) {
-                JSONArray()
-            }
-
-            // Deduplicate in raw queue by checking last 50 items
-            val itemPkg = item["packageName"] as? String ?: ""
-            val itemTitle = item["title"] as? String ?: ""
-            val itemText = item["text"] as? String ?: ""
-            val itemTime = item["timestamp"] as? Long ?: 0L
-
-            for (i in 0 until array.length()) {
-                val obj = array.optJSONObject(i) ?: continue
-                if (obj.optString("packageName") == itemPkg &&
-                    obj.optString("title") == itemTitle &&
-                    obj.optString("text") == itemText &&
-                    Math.abs(obj.optLong("timestamp") - itemTime) < 5000
-                ) {
-                    // Duplicate notification within 5 seconds, ignore
-                    return
-                }
-            }
-
-            val newObj = JSONObject().apply {
-                put("packageName", itemPkg)
-                put("title", itemTitle)
-                put("text", itemText)
-                put("timestamp", itemTime)
-            }
-
-            array.put(newObj)
-            prefs.edit().putString(KEY_QUEUE, array.toString()).apply()
         }
     }
 }

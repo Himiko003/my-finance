@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_flutter/models/transaction_model.dart';
@@ -149,6 +151,192 @@ void main() {
       // Now we have 2 transactions, existing is preserved
       expect(TransactionService.transactions.length, 2);
       expect(TransactionService.transactions.any((t) => t.id == 'existing_123'), isTrue);
+    });
+
+    test('BNI notification is recognized and processed into PendingTransaction', () async {
+      final pending = await NotificationService.simulateNotification(
+        source: 'BNI',
+        title: 'BNI Mobile Banking',
+        text: 'Pembayaran QRIS sebesar Rp 75.000 berhasil',
+        timestamp: DateTime(2026, 9, 29, 16, 0).millisecondsSinceEpoch,
+      );
+
+      expect(pending, isNotNull);
+      expect(pending!.source, 'BNI');
+      expect(pending.amount, 75000.0);
+      expect(pending.isIncome, isFalse);
+      expect(NotificationService.pendingTransactions.length, 1);
+    });
+
+    test('When isConfirmRequired is false, valid notification auto-saves to TransactionService and updates notifier', () async {
+      await NotificationService.setConfirmRequired(false);
+      int updateEvents = 0;
+      void listener() => updateEvents++;
+      NotificationService.transactionUpdateNotifier.addListener(listener);
+
+      try {
+        final timestamp = DateTime(2026, 9, 29, 17, 0).millisecondsSinceEpoch;
+        final result = await NotificationService.simulateNotification(
+          source: 'Mandiri',
+          title: 'Livin Mandiri',
+          text: 'Transfer masuk Rp 250.000 dari SITI',
+          timestamp: timestamp,
+        );
+
+        expect(result, isNotNull);
+        expect(NotificationService.pendingTransactions, isEmpty);
+        expect(NotificationService.pendingCountNotifier.value, 0);
+        expect(TransactionService.transactions.length, 1);
+        expect(TransactionService.transactions.first.amount, 250000.0);
+        expect(TransactionService.transactions.first.isIncome, isTrue);
+        expect(updateEvents, 1);
+
+        // Duplicate notification after auto-save must be rejected
+        final duplicate = await NotificationService.simulateNotification(
+          source: 'Mandiri',
+          title: 'Livin Mandiri',
+          text: 'Transfer masuk Rp 250.000 dari SITI',
+          timestamp: timestamp + 2000,
+        );
+        expect(duplicate, isNull);
+        expect(TransactionService.transactions.length, 1);
+      } finally {
+        NotificationService.transactionUpdateNotifier.removeListener(listener);
+      }
+    });
+
+    test('Concurrent identical notifications are deduplicated by _inFlightFingerprints', () async {
+      await NotificationService.setConfirmRequired(false);
+      final timestamp = DateTime(2026, 9, 29, 18, 0).millisecondsSinceEpoch;
+
+      final results = await Future.wait([
+        NotificationService.simulateNotification(
+          source: 'BCA',
+          title: 'BCA Mobile',
+          text: 'Pembayaran QRIS Rp 45.000 berhasil',
+          timestamp: timestamp,
+        ),
+        NotificationService.simulateNotification(
+          source: 'BCA',
+          title: 'BCA Mobile',
+          text: 'Pembayaran QRIS Rp 45.000 berhasil',
+          timestamp: timestamp,
+        ),
+      ]);
+
+      final nonNullCount = results.where((r) => r != null).length;
+      expect(nonNullCount, 1);
+      expect(TransactionService.transactions.length, 1);
+      expect(NotificationService.transactionUpdateNotifier.value, 1);
+    });
+
+    test('Concurrent identical notifications with isConfirmRequired true create only one PendingTransaction', () async {
+      await NotificationService.setConfirmRequired(true);
+      final timestamp = DateTime(2026, 9, 29, 18, 15).millisecondsSinceEpoch;
+
+      final results = await Future.wait([
+        NotificationService.simulateNotification(
+          source: 'GoPay',
+          title: 'GoPay',
+          text: 'Pembayaran QRIS Rp 30.000 berhasil',
+          timestamp: timestamp,
+        ),
+        NotificationService.simulateNotification(
+          source: 'GoPay',
+          title: 'GoPay',
+          text: 'Pembayaran QRIS Rp 30.000 berhasil',
+          timestamp: timestamp,
+        ),
+      ]);
+
+      final nonNullCount = results.where((r) => r != null).length;
+      expect(nonNullCount, 1);
+      expect(NotificationService.pendingTransactions.length, 1);
+      expect(TransactionService.transactions, isEmpty);
+    });
+  });
+
+  group('NotificationService - Native MethodChannel & Acknowledgment', () {
+    const channel = MethodChannel('com.myfinance.app/notification_listener');
+
+    tearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('Real-time onNotificationReceived processes notification and sends acknowledgeNotification', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final List<MethodCall> nativeCalls = [];
+      final ts = DateTime(2026, 9, 29, 19, 0).millisecondsSinceEpoch;
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall call) async {
+        nativeCalls.add(call);
+        if (call.method == 'getUnprocessedNotifications') {
+          return <Map<String, dynamic>>[];
+        }
+        return true;
+      });
+
+      await NotificationService.initialize();
+
+      final payload = {
+        'packageName': 'com.bca',
+        'title': 'BCA Mobile',
+        'text': 'Transfer masuk Rp 300.000 dari ANDI',
+        'timestamp': ts,
+      };
+
+      final encoded = const StandardMethodCodec().encodeMethodCall(
+        MethodCall('onNotificationReceived', payload),
+      );
+
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(channel.name, encoded, (_) {});
+
+      expect(NotificationService.pendingTransactions.length, 1);
+      expect(NotificationService.pendingTransactions.first.amount, 300000.0);
+      expect(
+        nativeCalls.any(
+          (c) =>
+              c.method == 'acknowledgeNotification' &&
+              c.arguments['packageName'] == 'com.bca' &&
+              c.arguments['timestamp'] == ts,
+        ),
+        isTrue,
+      );
+    });
+
+    test('syncFromNative deduplicates notifications already received in real-time', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final ts = DateTime(2026, 9, 29, 19, 5).millisecondsSinceEpoch;
+      final sampleItem = {
+        'packageName': 'id.co.bni.newmbanking',
+        'title': 'BNI Mobile Banking',
+        'text': 'Pembayaran QRIS Rp 60.000 berhasil',
+        'timestamp': ts,
+      };
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall call) async {
+        if (call.method == 'getUnprocessedNotifications') {
+          return [sampleItem];
+        }
+        return true;
+      });
+
+      await NotificationService.initialize();
+      expect(NotificationService.pendingTransactions.length, 1);
+
+      // Simulate same item arriving via real-time callback afterwards
+      final encoded = const StandardMethodCodec().encodeMethodCall(
+        MethodCall('onNotificationReceived', sampleItem),
+      );
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(channel.name, encoded, (_) {});
+
+      expect(NotificationService.pendingTransactions.length, 1);
     });
   });
 }

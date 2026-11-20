@@ -19,6 +19,7 @@ class NotificationService {
 
   static final List<PendingTransaction> pendingTransactions = [];
   static final Set<String> processedFingerprints = {};
+  static final Set<String> _inFlightFingerprints = {};
 
   static bool isAutoDetectEnabled = true;
   static bool isConfirmRequired = true;
@@ -26,6 +27,7 @@ class NotificationService {
     'BCA',
     'BRI',
     'Mandiri',
+    'BNI',
     'DANA',
     'GoPay',
     'OVO',
@@ -33,6 +35,8 @@ class NotificationService {
   };
 
   static final ValueNotifier<int> pendingCountNotifier =
+      ValueNotifier<int>(0);
+  static final ValueNotifier<int> transactionUpdateNotifier =
       ValueNotifier<int>(0);
 
   static bool _isInitialized = false;
@@ -53,12 +57,29 @@ class NotificationService {
           final Map<dynamic, dynamic>? args = call.arguments;
           if (args != null) {
             final map = Map<String, dynamic>.from(args);
+            final packageName = map['packageName']?.toString() ?? '';
+            final title = map['title']?.toString() ?? '';
+            final text = map['text']?.toString() ?? '';
+            final timestamp = (map['timestamp'] as num?)?.toInt();
+
             await processRawNotification(
-              packageName: map['packageName']?.toString() ?? '',
-              title: map['title']?.toString() ?? '',
-              text: map['text']?.toString() ?? '',
-              timestamp: map['timestamp'] as int?,
+              packageName: packageName,
+              title: title,
+              text: text,
+              timestamp: timestamp,
             );
+
+            // Acknowledge to native queue only after Flutter handles it without error
+            try {
+              await _channel.invokeMethod('acknowledgeNotification', {
+                'packageName': packageName,
+                'title': title,
+                'text': text,
+                'timestamp': timestamp ?? 0,
+              });
+            } catch (_) {
+              // Ignored if native channel is unavailable
+            }
           }
         }
       });
@@ -159,13 +180,35 @@ class NotificationService {
       return null;
     }
 
-    final pending = parsed.toPendingTransaction();
-    pendingTransactions.insert(0, pending);
+    // Anti-duplication Check 3: Currently being processed concurrently
+    if (_inFlightFingerprints.contains(parsed.fingerprint)) {
+      return null;
+    }
 
-    await _savePending();
-    pendingCountNotifier.value = pendingTransactions.length;
+    _inFlightFingerprints.add(parsed.fingerprint);
+    try {
+      final pending = parsed.toPendingTransaction();
 
-    return pending;
+      if (!isConfirmRequired) {
+        final transaction = pending.toTransactionModel();
+        await TransactionService.addTransaction(transaction);
+
+        processedFingerprints.add(parsed.fingerprint);
+        await _saveFingerprints();
+
+        transactionUpdateNotifier.value++;
+        return pending;
+      }
+
+      pendingTransactions.insert(0, pending);
+
+      await _savePending();
+      pendingCountNotifier.value = pendingTransactions.length;
+
+      return pending;
+    } finally {
+      _inFlightFingerprints.remove(parsed.fingerprint);
+    }
   }
 
   /// Confirms a pending transaction and moves it to main transactions
@@ -193,6 +236,7 @@ class NotificationService {
     await _savePending();
 
     pendingCountNotifier.value = pendingTransactions.length;
+    transactionUpdateNotifier.value++;
   }
 
   /// Ignores a pending transaction without adding to main transactions
@@ -231,6 +275,7 @@ class NotificationService {
     String packageName = 'com.bca';
     if (source == 'Mandiri') packageName = 'id.bmri.livin';
     if (source == 'BRI') packageName = 'com.bri.bmo';
+    if (source == 'BNI') packageName = 'id.co.bni.newmbanking';
     if (source == 'DANA') packageName = 'id.dana';
     if (source == 'GoPay') packageName = 'com.gojek.app';
     if (source == 'OVO') packageName = 'ovo.id';
@@ -343,18 +388,21 @@ class NotificationService {
   static void resetForTesting() {
     pendingTransactions.clear();
     processedFingerprints.clear();
+    _inFlightFingerprints.clear();
     isAutoDetectEnabled = true;
     isConfirmRequired = true;
     enabledSources = {
       'BCA',
       'BRI',
       'Mandiri',
+      'BNI',
       'DANA',
       'GoPay',
       'OVO',
       'ShopeePay',
     };
     pendingCountNotifier.value = 0;
+    transactionUpdateNotifier.value = 0;
     _isInitialized = false;
   }
 }

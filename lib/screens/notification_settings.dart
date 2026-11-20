@@ -21,6 +21,7 @@ class _NotificationSettingsScreenState
     {'name': 'BCA', 'color': const Color(0xFF005DAA), 'icon': Icons.account_balance},
     {'name': 'BRI', 'color': const Color(0xFF00529C), 'icon': Icons.account_balance},
     {'name': 'Mandiri', 'color': const Color(0xFF003876), 'icon': Icons.account_balance},
+    {'name': 'BNI', 'color': const Color(0xFFF15A23), 'icon': Icons.account_balance},
     {'name': 'DANA', 'color': const Color(0xFF118EEA), 'icon': Icons.account_balance_wallet},
     {'name': 'GoPay', 'color': const Color(0xFF00AA13), 'icon': Icons.wallet},
     {'name': 'OVO', 'color': const Color(0xFF4C2A86), 'icon': Icons.wallet},

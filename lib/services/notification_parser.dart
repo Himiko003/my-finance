@@ -58,6 +58,7 @@ class NotificationParser {
     'BCA',
     'BRI',
     'Mandiri',
+    'BNI',
     'DANA',
     'GoPay',
     'OVO',
@@ -73,6 +74,10 @@ class NotificationParser {
   }) {
     final combinedText = '$title $text'.trim();
     if (combinedText.isEmpty) return null;
+
+    if (shouldIgnoreNotification(combinedText)) {
+      return null;
+    }
 
     final double? amount = extractAmount(combinedText);
     if (amount == null || amount <= 0) {
@@ -150,6 +155,81 @@ class NotificationParser {
     return 'Lainnya';
   }
 
+  /// Filters out non-transactional notifications (OTP, failed/cancelled, marketing promos)
+  static bool shouldIgnoreNotification(String text) {
+    final lower = text.toLowerCase();
+
+    // 1. OTP / verification / security codes
+    final otpPatterns = [
+      RegExp(r'\botp\b'),
+      RegExp(r'\bkode\s+verifikasi\b'),
+      RegExp(r'\bverification\s+code\b'),
+      RegExp(r'\bkode\s+keamanan\b'),
+      RegExp(r'\bjangan\s+(?:bagikan|berikan)\s+kode\b'),
+      RegExp(r'\bpin\s+transaksi\b'),
+    ];
+    for (final pattern in otpPatterns) {
+      if (pattern.hasMatch(lower)) return true;
+    }
+
+    // 2. Failed, cancelled, expired, or pending-payment notifications
+    const failedOrCancelledPhrases = [
+      'transaksi gagal',
+      'pembayaran gagal',
+      'transfer gagal',
+      'top up gagal',
+      'gagal diproses',
+      'tidak berhasil',
+      'belum berhasil',
+      'dibatalkan',
+      'cancelled',
+      'canceled',
+      'kadaluarsa',
+      'kedaluwarsa',
+      'expired',
+      'ditolak',
+      'declined',
+      'rejected',
+      'menunggu pembayaran',
+      'selesaikan pembayaran',
+    ];
+    for (final phrase in failedOrCancelledPhrases) {
+      if (lower.contains(phrase)) return true;
+    }
+
+    // 3. Marketing / promotional notifications without completed transaction signals
+    const promoPhrases = [
+      'diskon hingga',
+      'cashback hingga',
+      'promo spesial',
+      'kode promo',
+      'klaim sekarang',
+      'dapatkan cashback',
+      'nikmati diskon',
+      'syarat & ketentuan',
+      's&k berlaku',
+      'penawaran spesial',
+      'yuk transaksi',
+      'buruan',
+    ];
+    const completedSignals = [
+      'berhasil',
+      'sukses',
+      'telah ditambahkan',
+      'diterima',
+      'didebit',
+      'dikredit',
+      'transfer masuk',
+      'transfer keluar',
+    ];
+    final hasPromoPhrase = promoPhrases.any(lower.contains);
+    if (hasPromoPhrase && !completedSignals.any(lower.contains)) {
+      return true;
+    }
+
+    return false;
+  }
+
   /// Extracts transaction amount from text with Indonesian currency format priority
   static double? extractAmount(String text) {
     // 1. Match patterns explicitly preceded by Rp, IDR
@@ -157,9 +237,8 @@ class NotificationParser {
       r'(?:Rp\.?|IDR)\s*([0-9\.,]+)',
       caseSensitive: false,
     );
-    final rpMatch = rpPattern.firstMatch(text);
-    if (rpMatch != null) {
-      final parsed = parseFormattedNumber(rpMatch.group(1)!);
+    for (final match in rpPattern.allMatches(text)) {
+      final parsed = parseFormattedNumber(match.group(1)!);
       if (parsed != null && parsed > 0) return parsed;
     }
 
@@ -168,19 +247,17 @@ class NotificationParser {
       r'(?:sebesar|nominal|total|jumlah|nilai|harga)\s*(?:Rp\.?|IDR)?\s*([0-9\.,]+)',
       caseSensitive: false,
     );
-    final keywordMatch = keywordPattern.firstMatch(text);
-    if (keywordMatch != null) {
-      final parsed = parseFormattedNumber(keywordMatch.group(1)!);
+    for (final match in keywordPattern.allMatches(text)) {
+      final parsed = parseFormattedNumber(match.group(1)!);
       if (parsed != null && parsed > 0) return parsed;
     }
 
     // 3. Match general Indonesian number formats like 1.500.000 or 25.000
     final generalPattern = RegExp(
-      r'(?:^|\s)([0-9]{1,3}(?:[\.,][0-9]{3})+(?:[\.,][0-9]{2})?)(?:\s|$|\.)',
+      r'(?:^|\s)([0-9]{1,3}(?:[\.,][0-9]{3})+(?:[\.,][0-9]{2})?)(?:\s|$|\.|,)',
     );
-    final generalMatch = generalPattern.firstMatch(text);
-    if (generalMatch != null) {
-      final parsed = parseFormattedNumber(generalMatch.group(1)!);
+    for (final match in generalPattern.allMatches(text)) {
+      final parsed = parseFormattedNumber(match.group(1)!);
       if (parsed != null && parsed > 0) return parsed;
     }
 
@@ -267,14 +344,20 @@ class NotificationParser {
       'uang masuk',
       'top up berhasil',
       'saldo masuk',
+      'saldo bertambah',
       'telah ditambahkan',
       'berhasil diisi',
       'cashback',
+      'refund',
+      'pengembalian dana',
       'menerima transfer',
       'penerimaan',
       'terima uang',
+      'dana diterima',
+      'uang diterima',
       'credited',
       'payment received',
+      'incoming transfer',
       'cash in',
       'menerima dana',
     ];
@@ -290,16 +373,25 @@ class NotificationParser {
       'transfer keluar',
       'transfer ke',
       'berhasil ditransfer ke',
+      'berhasil dikirim',
       'pembayaran',
       'bayar',
       'qris',
       'kirim uang',
       'pembelian',
+      'belanja',
       'tarik tunai',
+      'tarik saldo',
+      'cash out',
+      'auto debit',
+      'autodebet',
+      'biaya admin',
       'debit',
       'debited',
       'purchase',
       'tagihan',
+      'sent to',
+      'paid to',
     ];
 
     for (final phrase in strongExpensePhrases) {
