@@ -338,5 +338,45 @@ void main() {
 
       expect(NotificationService.pendingTransactions.length, 1);
     });
+
+    test('Bank Jago notification integrates with PendingTransactions, isConfirmRequired, and deduplication', () async {
+      final ts = DateTime(2026, 9, 29, 20, 0).millisecondsSinceEpoch;
+
+      // 1. With isConfirmRequired = true -> goes to PendingTransactions
+      await NotificationService.setConfirmRequired(true);
+      final pending = await NotificationService.simulateNotification(
+        source: 'Bank Jago',
+        title: 'Bank Jago',
+        text: 'Uang masuk Rp 450.000 ke Kantong Utama dari ANDI',
+        timestamp: ts,
+      );
+      expect(pending, isNotNull);
+      expect(pending!.source, 'Bank Jago');
+      expect(pending.amount, 450000.0);
+      expect(pending.isIncome, isTrue);
+      expect(NotificationService.pendingTransactions.length, 1);
+
+      // Duplicate in pending is rejected
+      final dupPending = await NotificationService.simulateNotification(
+        source: 'Bank Jago',
+        title: 'Bank Jago',
+        text: 'Uang masuk Rp 450.000 ke Kantong Utama dari ANDI',
+        timestamp: ts + 1000,
+      );
+      expect(dupPending, isNull);
+
+      // 2. With isConfirmRequired = false -> auto-saves to TransactionService
+      await NotificationService.setConfirmRequired(false);
+      final autoSaved = await NotificationService.simulateNotification(
+        source: 'Bank Jago',
+        title: 'Pembayaran QRIS',
+        text: 'Pembayaran QRIS di Indomaret sebesar Rp 35.000 berhasil',
+        timestamp: ts + 60000,
+      );
+      expect(autoSaved, isNotNull);
+      expect(TransactionService.transactions.length, 1);
+      expect(TransactionService.transactions.first.amount, 35000.0);
+      expect(TransactionService.transactions.first.isIncome, isFalse);
+    });
   });
 }

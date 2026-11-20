@@ -4,12 +4,14 @@ import android.app.Notification
 import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
 class MyFinanceNotificationListener : NotificationListenerService() {
 
     companion object {
+        private const val TAG = "MyFinance"
         const val PREFS_NAME = "MyFinanceNotificationPrefs"
         const val KEY_QUEUE = "raw_notifications_queue"
 
@@ -27,6 +29,7 @@ class MyFinanceNotificationListener : NotificationListenerService() {
             "id.bmri.livin",
             "com.bri.bmo",
             "id.co.bni.newmbanking",
+            "com.jago.digitalBanking",
             "id.dana",
             "com.gojek.app",
             "com.gopay.wallet",
@@ -70,6 +73,7 @@ class MyFinanceNotificationListener : NotificationListenerService() {
 
                 array.put(newObj)
                 prefs.edit().putString(KEY_QUEUE, array.toString()).apply()
+                Log.d(TAG, "enqueueNotification: saved pkg=$itemPkg queueSize=${array.length()}")
             }
         }
 
@@ -95,6 +99,7 @@ class MyFinanceNotificationListener : NotificationListenerService() {
                 }
 
                 prefs.edit().remove(KEY_QUEUE).apply()
+                Log.d(TAG, "drainQueue: drained ${resultList.size} notifications")
                 return resultList
             }
         }
@@ -149,6 +154,16 @@ class MyFinanceNotificationListener : NotificationListenerService() {
         }
     }
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        Log.d(TAG, "onListenerConnected: NotificationListenerService bound to system")
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        Log.w(TAG, "onListenerDisconnected: NotificationListenerService unbound from system")
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         if (sbn == null) return
 
@@ -158,17 +173,25 @@ class MyFinanceNotificationListener : NotificationListenerService() {
             val extras = notification.extras ?: return
 
             val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-            val text = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-                ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-                ?: ""
+            val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
+            val normalText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
+            val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+                ?.joinToString(" ") { it.toString() }
+            val text = bigText ?: normalText ?: textLines ?: ""
 
-            if (title.isBlank() && text.isBlank()) return
+            Log.d(TAG, "onNotificationPosted: pkg=$packageName title='$title' text='$text'")
+
+            if (title.isBlank() && text.isBlank()) {
+                Log.d(TAG, "onNotificationPosted: skipped blank title & text for pkg=$packageName")
+                return
+            }
 
             val isTargetApp = TARGET_PACKAGES.contains(packageName)
             val combined = (title + " " + text).lowercase()
 
             // Filter: Target app or content having currency/financial signals
             val hasFinancialSignal = combined.contains("rp") ||
+                    combined.contains("idr") ||
                     combined.contains("transfer") ||
                     combined.contains("pembayaran") ||
                     combined.contains("qris") ||
@@ -180,6 +203,7 @@ class MyFinanceNotificationListener : NotificationListenerService() {
                     combined.contains("credit")
 
             if (!isTargetApp && !hasFinancialSignal) {
+                Log.d(TAG, "onNotificationPosted: filtered out pkg=$packageName (not target & no financial signal)")
                 return
             }
 
@@ -196,9 +220,15 @@ class MyFinanceNotificationListener : NotificationListenerService() {
             enqueueNotification(this, dataMap)
 
             // If Flutter is active in foreground, also dispatch in real-time
-            activeListener?.invoke(dataMap)
+            val listener = activeListener
+            if (listener != null) {
+                Log.d(TAG, "onNotificationPosted: dispatching real-time via activeListener pkg=$packageName")
+                listener.invoke(dataMap)
+            } else {
+                Log.d(TAG, "onNotificationPosted: activeListener is null (app background/closed), queued only")
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "onNotificationPosted: error", e)
         }
     }
 }

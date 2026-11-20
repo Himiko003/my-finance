@@ -46,6 +46,7 @@ class NotificationParser {
     'id.bmri.livin': 'Mandiri',
     'com.bri.bmo': 'BRI',
     'id.co.bni.newmbanking': 'BNI',
+    'com.jago.digitalBanking': 'Bank Jago',
     'id.dana': 'DANA',
     'com.gojek.app': 'GoPay',
     'com.gopay.wallet': 'GoPay',
@@ -59,6 +60,7 @@ class NotificationParser {
     'BRI',
     'Mandiri',
     'BNI',
+    'Bank Jago',
     'DANA',
     'GoPay',
     'OVO',
@@ -150,6 +152,9 @@ class NotificationParser {
     }
     if (lower.contains('bni')) {
       return 'BNI';
+    }
+    if (lower.contains('bank jago') || RegExp(r'\bjago\b').hasMatch(lower)) {
+      return 'Bank Jago';
     }
 
     return 'Lainnya';
@@ -345,6 +350,8 @@ class NotificationParser {
       'top up berhasil',
       'saldo masuk',
       'saldo bertambah',
+      'kantong bertambah',
+      'telah masuk',
       'telah ditambahkan',
       'berhasil diisi',
       'cashback',
@@ -371,9 +378,12 @@ class NotificationParser {
     // Specific strong expense phrases
     final strongExpensePhrases = [
       'transfer keluar',
+      'uang keluar',
       'transfer ke',
       'berhasil ditransfer ke',
       'berhasil dikirim',
+      'berhasil kirim',
+      'kamu mengirim',
       'pembayaran',
       'bayar',
       'qris',
@@ -558,7 +568,10 @@ class NotificationParser {
     required String source,
   }) {
     final cleanT = title.trim();
-    if (cleanT.isNotEmpty && cleanT != source && !cleanT.toLowerCase().contains('myfinance')) {
+    if (cleanT.isNotEmpty &&
+        cleanT != source &&
+        cleanT.toLowerCase() != 'jago' &&
+        !cleanT.toLowerCase().contains('myfinance')) {
       return cleanT;
     }
 
@@ -566,10 +579,14 @@ class NotificationParser {
     if (lower.contains('qris')) {
       return 'Pembayaran QRIS';
     }
-    if (lower.contains('transfer masuk')) {
+    if (lower.contains('transfer masuk') || lower.contains('uang masuk')) {
       return 'Transfer Masuk';
     }
-    if (lower.contains('transfer ke') || lower.contains('transfer keluar')) {
+    if (lower.contains('transfer ke') ||
+        lower.contains('transfer keluar') ||
+        lower.contains('uang keluar') ||
+        lower.contains('mengirim') ||
+        lower.contains('berhasil kirim')) {
       return 'Transfer Keluar';
     }
     if (lower.contains('pembayaran')) {

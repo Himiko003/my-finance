@@ -28,6 +28,7 @@ class NotificationService {
     'BRI',
     'Mandiri',
     'BNI',
+    'Bank Jago',
     'DANA',
     'GoPay',
     'OVO',
@@ -151,6 +152,7 @@ class NotificationService {
     required String text,
     int? timestamp,
   }) async {
+    debugPrint('[MyFinance] processRawNotification: pkg=$packageName autoDetect=$isAutoDetectEnabled');
     if (!isAutoDetectEnabled) return null;
 
     final parsed = NotificationParser.parse(
@@ -160,10 +162,14 @@ class NotificationService {
       timestamp: timestamp,
     );
 
-    if (parsed == null) return null;
+    if (parsed == null) {
+      debugPrint('[MyFinance] processRawNotification: parser returned null for pkg=$packageName title="$title"');
+      return null;
+    }
 
     // Check if source is enabled by user
     if (!enabledSources.contains(parsed.source) && parsed.source != 'Lainnya') {
+      debugPrint('[MyFinance] processRawNotification: source "${parsed.source}" not in enabledSources=$enabledSources');
       return null;
     }
 
@@ -276,6 +282,7 @@ class NotificationService {
     if (source == 'Mandiri') packageName = 'id.bmri.livin';
     if (source == 'BRI') packageName = 'com.bri.bmo';
     if (source == 'BNI') packageName = 'id.co.bni.newmbanking';
+    if (source == 'Bank Jago') packageName = 'com.jago.digitalBanking';
     if (source == 'DANA') packageName = 'id.dana';
     if (source == 'GoPay') packageName = 'com.gojek.app';
     if (source == 'OVO') packageName = 'ovo.id';
@@ -396,6 +403,7 @@ class NotificationService {
       'BRI',
       'Mandiri',
       'BNI',
+      'Bank Jago',
       'DANA',
       'GoPay',
       'OVO',

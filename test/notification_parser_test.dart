@@ -100,11 +100,13 @@ void main() {
       expect(NotificationParser.detectSource(packageName: 'com.bri.bmo', title: '', text: ''), 'BRI');
       expect(NotificationParser.detectSource(packageName: 'id.bmri.livin', title: '', text: ''), 'Mandiri');
       expect(NotificationParser.detectSource(packageName: 'id.co.bni.newmbanking', title: '', text: ''), 'BNI');
+      expect(NotificationParser.detectSource(packageName: 'com.jago.digitalBanking', title: '', text: ''), 'Bank Jago');
       expect(NotificationParser.detectSource(packageName: 'id.dana', title: '', text: ''), 'DANA');
       expect(NotificationParser.detectSource(packageName: 'com.gojek.app', title: '', text: ''), 'GoPay');
       expect(NotificationParser.detectSource(packageName: 'ovo.id', title: '', text: ''), 'OVO');
       expect(NotificationParser.detectSource(packageName: 'com.shopee.id', title: '', text: ''), 'ShopeePay');
       expect(NotificationParser.supportedSources, contains('BNI'));
+      expect(NotificationParser.supportedSources, contains('Bank Jago'));
     });
 
     test('Detect category Makanan', () {
@@ -260,6 +262,69 @@ void main() {
       expect(parsed!.isIncome, isFalse);
       expect(parsed.amount, 200000.0);
       expect(parsed.category, 'Tagihan');
+    });
+  });
+
+  group('NotificationParser - Bank Jago Formats', () {
+    test('Parse Bank Jago incoming transfer ("uang masuk")', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Bank Jago',
+        text: 'Uang masuk Rp 500.000 ke Kantong Utama dari BUDI',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.source, 'Bank Jago');
+      expect(parsed.isIncome, isTrue);
+      expect(parsed.amount, 500000.0);
+      expect(parsed.title, 'Transfer Masuk');
+    });
+
+    test('Parse Bank Jago outgoing transfer ("uang keluar")', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Jago',
+        text: 'Uang keluar Rp 75.000 dari Kantong Jajan ke SITI',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.source, 'Bank Jago');
+      expect(parsed.isIncome, isFalse);
+      expect(parsed.amount, 75000.0);
+      expect(parsed.title, 'Transfer Keluar');
+    });
+
+    test('Parse Bank Jago QRIS payment', () {
+      final parsed = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Pembayaran QRIS Berhasil',
+        text: 'Transaksi QRIS di Kopi Kenangan sebesar Rp 28.000 berhasil',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.source, 'Bank Jago');
+      expect(parsed.isIncome, isFalse);
+      expect(parsed.amount, 28000.0);
+      expect(parsed.category, 'Makanan');
+    });
+
+    test('Ignore Bank Jago OTP, promo, and failed notifications', () {
+      final otp = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Bank Jago',
+        text: 'Kode OTP transaksi Rp 100.000 kamu adalah 654321. Jangan bagikan kode ini.',
+      );
+      final promo = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Promo Bank Jago',
+        text: 'Promo spesial! Dapatkan cashback hingga Rp 50.000 dengan kode promo JAGO50.',
+      );
+      final failed = NotificationParser.parse(
+        packageName: 'com.jago.digitalBanking',
+        title: 'Bank Jago',
+        text: 'Transfer gagal sebesar Rp 200.000 ke rekening tujuan.',
+      );
+
+      expect(otp, isNull);
+      expect(promo, isNull);
+      expect(failed, isNull);
     });
   });
 }

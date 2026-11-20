@@ -22,6 +22,7 @@ class _NotificationSettingsScreenState
     {'name': 'BRI', 'color': const Color(0xFF00529C), 'icon': Icons.account_balance},
     {'name': 'Mandiri', 'color': const Color(0xFF003876), 'icon': Icons.account_balance},
     {'name': 'BNI', 'color': const Color(0xFFF15A23), 'icon': Icons.account_balance},
+    {'name': 'Bank Jago', 'color': const Color(0xFFFEAE00), 'icon': Icons.account_balance},
     {'name': 'DANA', 'color': const Color(0xFF118EEA), 'icon': Icons.account_balance_wallet},
     {'name': 'GoPay', 'color': const Color(0xFF00AA13), 'icon': Icons.wallet},
     {'name': 'OVO', 'color': const Color(0xFF4C2A86), 'icon': Icons.wallet},
@@ -997,6 +998,9 @@ class _NotificationSettingsScreenState
                             } else if (val == 'Mandiri') {
                               titleController.text = 'Livin Mandiri';
                               textController.text = 'Debit Rp 1.500.000 untuk tagihan PLN';
+                            } else if (val == 'Bank Jago') {
+                              titleController.text = 'Bank Jago';
+                              textController.text = 'Uang masuk Rp 500.000 ke Kantong Utama dari BUDI';
                             }
                           });
                         }
